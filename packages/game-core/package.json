@@ -3,5 +3,8 @@
   "version": "1.0.0",
   "main": "src/index.ts",
   "types": "src/index.js",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "mitt": "^3.0.1"
+  }
 }

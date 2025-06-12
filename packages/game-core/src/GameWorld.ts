@@ -1,10 +1,11 @@
 import { Application, Container } from "pixi.js";
 import { Viewport } from "pixi-viewport";
-import { Tank } from "./entities/Tank";
+import { Tank, TankType } from "./entities/Tank";
 import { Bullet } from "./entities/Bullet";
 import { Grid } from "./entities/Grid";
 import { v4 as uuid } from "uuid";
 import { AIController } from "./entities/AIController";
+import { gameEvents } from "./GameEvents";
 
 export class GameWorld {
   app: Application;
@@ -12,9 +13,9 @@ export class GameWorld {
   tanks: Map<string, Tank> = new Map();
   bullets: Map<string, Bullet> = new Map();
   playerId: string;
-  lastEnemySpawn: number;
+  lastEnemySpawn: number = 0;
 
-  private aiControllers: AIController[] = [];
+  private aiControllers: Map<string, AIController> = new Map();
 
   constructor(app: Application, viewport: Viewport, playerId: string) {
     this.app = app;
@@ -35,8 +36,8 @@ export class GameWorld {
     app.stage.addChild(viewport);
   }
 
-  spawnTank(id: string, name: string) {
-    const tank = new Tank(id, name);
+  spawnTank(id: string, name: string, type: TankType = TankType.AI) {
+    const tank = new Tank(id, name, type);
     tank.position.set(this.app.screen.width / 2, this.app.screen.height / 2);
     this.viewport.addChild(tank);
     this.tanks.set(id, tank);
@@ -49,12 +50,12 @@ export class GameWorld {
     this.tanks.set(id, tank);
 
     const ai = new AIController(tank);
-    this.aiControllers.push(ai);
+    this.aiControllers.set(id, ai);
   }
 
   fireBullet(tankId: string) {
     const tank = this.tanks.get(tankId);
-    if (!tank) return;
+    if (!tank || !tank.isAlive()) return;
 
     const angle = tank.turret.rotation + tank.rotation;
 
@@ -74,14 +75,52 @@ export class GameWorld {
     this.viewport.addChild(bullet);
   }
 
-  update(delta: number) {
-    this.tanks.forEach((tank) => tank.update(delta));
+  private checkCollision(bullet: Bullet, tank: Tank): boolean {
+    const dx = bullet.position.x - tank.position.x;
+    const dy = bullet.position.y - tank.position.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
 
-    // Update bullets
-    this.bullets.forEach((b) => b.update(delta));
+    const bulletRadius = bullet.radius ?? 4; // default if radius not defined
+    const tankRadius = 20; // default tank size from Tank.ts
+
+    return distance < bulletRadius + tankRadius;
+  }
+
+  getPlayerScore() {
+    const playerTank = this.tanks.get(this.playerId);
+    return playerTank?.score ?? 0;
+  }
+
+  updateLeaderboard() {
+    const scores = Array.from(this.tanks)
+      .map(([_, tank]) => ({
+        id: tank.id,
+        name: tank.name,
+        score: tank.score,
+      }))
+      .sort((a, b) => b.score - a.score);
+
+    gameEvents.emit("scoreUpdate", scores);
+  }
+
+  update(delta: number) {
+    this.tanks.forEach((tank, id) => {
+      tank.update(delta);
+
+      if (!tank.isAlive()) {
+        this.viewport.removeChild(tank);
+        this.tanks.delete(id);
+        this.aiControllers.delete(id);
+
+        if (tank.id === this.playerId) {
+          gameEvents.emit("playerDied");
+        }
+      }
+    });
 
     this.bullets.forEach((bullet, bulletId) => {
       bullet.update(delta);
+      this.updateLeaderboard();
 
       if (bullet.isExpired()) {
         this.bullets.delete(bulletId);
@@ -89,17 +128,18 @@ export class GameWorld {
       }
 
       for (const [tankId, tank] of Array.from(this.tanks)) {
-        if (tankId === bullet.ownerId || !tank.isAlive()) continue;
+        if (tankId === bullet.ownerId) continue;
 
-        const dx = bullet.position.x - tank.position.x;
-        const dy = bullet.position.y - tank.position.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist < 20) {
+        if (this.checkCollision(bullet, tank)) {
           tank.takeDamage(bullet.damage);
+
+          const shooter = this.tanks.get(bullet.ownerId);
+          if (shooter && !tank.isAlive()) {
+            shooter.score += 100;
+          }
+
           this.bullets.delete(bulletId);
           this.viewport.removeChild(bullet);
-          break;
         }
       }
     });

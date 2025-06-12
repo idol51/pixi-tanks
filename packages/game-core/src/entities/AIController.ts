@@ -9,7 +9,10 @@ export class AIController {
   }
 
   update(player: Tank, fire: (angle: number) => void) {
-    if (!player) return;
+    if (!player || !player.isAlive()) {
+      this.tank.stop();
+      return;
+    }
 
     const dx = player.position.x - this.tank.position.x;
     const dy = player.position.y - this.tank.position.y;
