@@ -6,13 +6,12 @@ export class Bullet extends Graphics {
   damage: number = 10;
   lifetime: number = 2000; // ms
   createdAt: number;
+  ownerId: string;
 
-  constructor(x: number, y: number, angle: number) {
+  constructor(x: number, y: number, angle: number, ownerId: string) {
     super();
-    this.beginFill(0xffff00);
-    this.drawCircle(0, 0, 5);
-    this.endFill();
-
+    this.ownerId = ownerId;
+    this.circle(0, 0, 5).fill(0xffff00);
     this.position.set(x, y);
     this.velocity = new Point(
       Math.cos(angle) * this.speed,

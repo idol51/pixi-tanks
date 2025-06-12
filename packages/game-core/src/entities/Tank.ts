@@ -1,4 +1,3 @@
-// packages/game-core/src/entities/Tank.ts
 import { Graphics, Point, Container } from "pixi.js";
 import { ITank } from "./ITank";
 import { Turret } from "./Turret";
@@ -46,6 +45,10 @@ export class Tank extends Container implements ITank {
 
   rotate(angle: number) {
     this.rotation = angle;
+  }
+
+  getRotationAngle() {
+    return this.rotation;
   }
 
   aimTurret(angle: number) {

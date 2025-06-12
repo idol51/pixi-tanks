@@ -4,6 +4,7 @@ import { GameWorld } from "@pixi-tanks/game-core";
 import { useKeyboardControls } from "./hooks/useKeyboardControls";
 import { useMouseAngle } from "./hooks/useMouseAngle";
 import { Button } from "@/components/ui/button";
+import { Viewport } from "pixi-viewport";
 
 export default function App() {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -25,9 +26,16 @@ export default function App() {
         antialias: true,
       })
       .then(() => {
+        const viewport = new Viewport({
+          screenWidth: window.innerWidth,
+          screenHeight: window.innerHeight,
+          worldWidth: 5000,
+          worldHeight: 5000,
+          events: app.renderer.events,
+        });
         canvasRef.current?.appendChild(app.canvas);
 
-        const game = new GameWorld(app);
+        const game = new GameWorld(app, viewport, "player");
         gameRef.current = game;
 
         // ✅ Spawn player tank ONCE
