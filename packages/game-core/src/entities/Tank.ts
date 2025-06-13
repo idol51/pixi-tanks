@@ -32,12 +32,15 @@ export class Tank extends Container implements ITank {
     this.rotation = 0;
 
     this.turret = new Turret();
+    this.healthBar = new Graphics();
+
     this.body = this.createBody();
     this.nameText = this.createNameText();
 
     this.addChild(this.body);
     this.addChild(this.turret);
     this.addChild(this.nameText);
+    this.addChild(this.healthBar);
   }
 
   private createBody() {
@@ -47,9 +50,6 @@ export class Tank extends Container implements ITank {
     g.circle(0, 0, 20).fill(color);
     g.zIndex = 200;
 
-    this.healthBar = new Graphics();
-    this.addChild(this.healthBar);
-    this.updateHealthBar();
     return g;
   }
 

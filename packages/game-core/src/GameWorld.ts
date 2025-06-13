@@ -1,4 +1,4 @@
-import { Application, Container } from "pixi.js";
+import { Application } from "pixi.js";
 import { Viewport } from "pixi-viewport";
 import { Tank, TankType } from "./entities/Tank";
 import { Bullet } from "./entities/Bullet";
@@ -147,17 +147,19 @@ export class GameWorld {
     const player = this.tanks.get(this.playerId); // Add `playerId` in constructor
 
     this.aiControllers.forEach((ai) => {
-      ai.update(player, (angle) => {
-        const bullet = new Bullet(
-          ai.tank.position.x + Math.cos(angle) * 30,
-          ai.tank.position.y + Math.sin(angle) * 30,
-          angle,
-          ai.tank.id
-        );
-        const bulletId = uuid();
-        this.bullets.set(bulletId, bullet);
-        this.viewport.addChild(bullet);
-      });
+      if (player) {
+        ai.update(player, (angle) => {
+          const bullet = new Bullet(
+            ai.tank.position.x + Math.cos(angle) * 30,
+            ai.tank.position.y + Math.sin(angle) * 30,
+            angle,
+            ai.tank.id
+          );
+          const bulletId = uuid();
+          this.bullets.set(bulletId, bullet);
+          this.viewport.addChild(bullet);
+        });
+      }
     });
 
     if (
