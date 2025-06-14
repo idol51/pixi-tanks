@@ -2,12 +2,10 @@
 
 import { Point } from "pixi.js";
 import { Turret } from "../Turret/Turret";
-import { TankType } from "./base-tank";
 
 export interface ITank {
   id: string;
   name: string;
-  type: TankType;
 
   position: Point;
   rotation: number;

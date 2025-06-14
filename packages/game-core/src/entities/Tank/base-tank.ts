@@ -4,22 +4,16 @@ import { Turret } from "../Turret/Turret";
 import { TankStats } from "../../data/tank-stats";
 import { ITank } from "./ITank";
 import { TankComponent } from "./TankComponent";
-
-export const TankType = {
-  PLAYER: "player",
-  AI: "ai",
-} as const;
-
-export type TankType = (typeof TankType)[keyof typeof TankType];
+import { HealthComponent } from "./components/HealthComponent";
 
 export abstract class BaseTank extends Container implements ITank {
   id: string;
   name: string;
-  type: TankType;
   velocity = { x: 0, y: 0 };
   health: number;
   maxHealth: number;
   score = 0;
+  tags = new Set<string>();
 
   protected stats: TankStats;
 
@@ -27,21 +21,23 @@ export abstract class BaseTank extends Container implements ITank {
   protected body: Graphics;
   protected nameText: Text;
   public turret!: Turret;
-
+  protected healthBar: HealthComponent;
   // Component system
   private components: TankComponent[] = [];
 
-  constructor(id: string, name: string, type: TankType, stats: TankStats) {
+  constructor(id: string, name: string, stats: TankStats) {
     super();
     this.id = id;
     this.name = name;
-    this.type = type;
     this.stats = stats;
     this.health = stats.maxHealth;
     this.maxHealth = stats.maxHealth;
 
     this.position = new Point(0, 0);
     this.rotation = 0;
+
+    this.healthBar = new HealthComponent();
+    this.healthBar.onAttach(this);
 
     // Visuals
     this.body = this.createBody();
@@ -53,6 +49,8 @@ export abstract class BaseTank extends Container implements ITank {
   // Public API
   update(delta: number) {
     for (const c of this.components) c.update(delta, this);
+
+    this.healthBar.update(delta, this);
 
     // Movement
     this.position.x += this.velocity.x * delta * this.stats.speed;

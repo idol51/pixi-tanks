@@ -1,6 +1,6 @@
 import { Turret } from "./Turret";
-import { MissileBullet } from "../Bullet/MissileBullet";
 import { BaseTank } from "../Tank/base-tank";
+import { BulletFactory, BulletType } from "../../factories/BulletFactory";
 
 export class MissileTurret extends Turret {
   fire(owner: BaseTank, overrideAngle?: number) {
@@ -17,14 +17,12 @@ export class MissileTurret extends Turret {
     const offsetX = Math.cos(angle) * 30;
     const offsetY = Math.sin(angle) * 30;
 
-    const stats = owner.getStats();
-
-    return new MissileBullet(
+    return BulletFactory.create(
+      BulletType.MISSILE,
       owner.position.x + offsetX,
       owner.position.y + offsetY,
       angle,
-      owner.id,
-      stats
+      owner.id
     );
   }
 }

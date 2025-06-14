@@ -1,5 +1,5 @@
 import { Graphics, Point } from "pixi.js";
-import { TankStats } from "../../data/tank-stats";
+import { BulletStats } from "../../data/bullet-stats";
 
 export class MissileBullet extends Graphics {
   radius = 6;
@@ -16,12 +16,12 @@ export class MissileBullet extends Graphics {
     y: number,
     angle: number,
     ownerId: string,
-    stats: TankStats
+    stats: BulletStats
   ) {
     super();
     this.ownerId = ownerId;
-    this.damage = stats.bulletDamage;
-    this.speed = stats.bulletSpeed;
+    this.damage = stats.damage;
+    this.speed = stats.speed;
 
     this.circle(0, 0, this.radius).fill(0xff6600);
     this.position.set(x, y);

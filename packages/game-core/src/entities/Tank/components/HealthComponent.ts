@@ -24,7 +24,7 @@ export class HealthComponent implements TankComponent {
     tank.removeChild(this.bar);
   }
 
-  update(_: number, tank: BaseTank) {
+  update(_delta: number, tank: BaseTank) {
     const { health, maxHealth } = tank;
     const stats = tank.getStats();
 

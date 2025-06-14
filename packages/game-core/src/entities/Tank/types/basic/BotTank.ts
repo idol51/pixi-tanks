@@ -1,12 +1,12 @@
 import { TankStats } from "../../../../data/tank-stats";
 import { BulletType } from "../../../../factories/BulletFactory";
-import { MissileTurret } from "../../../Turret/MissileTurret";
+import { Turret } from "../../../Turret/Turret";
 import { BaseTank } from "../../base-tank";
 
-export class MissileLauncherTank extends BaseTank {
+export class BotTank extends BaseTank {
   constructor(id: string, name: string, stats: TankStats) {
     super(id, name, stats);
-    this.turret = new MissileTurret(0x4444aa, 500, BulletType.MISSILE);
+    this.turret = new Turret(0x4444aa, 500, BulletType.BULLET);
     this.addChild(this.turret);
   }
 }

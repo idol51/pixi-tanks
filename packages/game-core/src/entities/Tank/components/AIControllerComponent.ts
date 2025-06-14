@@ -10,7 +10,7 @@ export class AIControllerComponent implements TankComponent {
 
   constructor(private world: GameWorld) {}
 
-  update(delta: number, tank: BaseTank) {
+  update(_delta: number, tank: BaseTank) {
     const player = this.world.tanks.get(this.world.playerId);
     if (!player || !tank.isAlive()) return;
 
@@ -35,10 +35,10 @@ export class AIControllerComponent implements TankComponent {
     if (distance <= 500 && now - this.lastFiredAt >= this.fireCooldown) {
       this.lastFiredAt = now;
       //   TODO: fix this
-      //   this.world.fireBullet(tank.id, angle);
+      this.world.fireBullet(tank.id);
     }
   }
 
-  onAttach(tank: BaseTank) {}
-  onDetach(tank: BaseTank) {}
+  onAttach(_tank: BaseTank) {}
+  onDetach(_tank: BaseTank) {}
 }

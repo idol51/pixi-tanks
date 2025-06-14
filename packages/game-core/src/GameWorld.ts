@@ -1,12 +1,13 @@
 import { Application } from "pixi.js";
 import { Viewport } from "pixi-viewport";
-import { BaseTank, TankType } from "./entities/Tank/base-tank";
+import { BaseTank } from "./entities/Tank/base-tank";
 import { Grid } from "./entities/Grid";
 import { v4 as uuid } from "uuid";
 import { gameEvents } from "./GameEvents";
 import { ITank } from "./entities/Tank/ITank";
 import { Bullet } from "./entities/Bullet/Bullet";
 import { TankFactory, TankVariant } from "./factories/TankFactory";
+import { EnemySpawner } from "./systems/EnemySpawner";
 
 export class GameWorld {
   app: Application;
@@ -14,6 +15,7 @@ export class GameWorld {
   tanks: Map<string, BaseTank> = new Map();
   bullets: Map<string, Bullet> = new Map();
   playerId: string;
+  private enemySpawner: EnemySpawner;
 
   constructor(app: Application, viewport: Viewport, playerId: string) {
     this.app = app;
@@ -30,14 +32,11 @@ export class GameWorld {
       .decelerate();
 
     app.stage.addChild(viewport);
+    this.enemySpawner = new EnemySpawner(this);
   }
 
-  spawnTank(id: string, name: string, type: TankType = TankType.AI) {
-    const tank = TankFactory.createTank(
-      TankVariant.MISSILE_LAUNCHER,
-      name,
-      type
-    );
+  spawnTank(id: string, name: string) {
+    const tank = TankFactory.createTank(TankVariant.MISSILE_LAUNCHER, name);
     tank.position.set(this.app.screen.width / 2, this.app.screen.height / 2);
     this.viewport.addChild(tank);
     this.tanks.set(id, tank);
@@ -129,6 +128,8 @@ export class GameWorld {
     if (player) {
       this.viewport.moveCenter(player.position.x, player.position.y);
     }
+
+    this.enemySpawner.update(delta);
 
     this.updateLeaderboard();
   }

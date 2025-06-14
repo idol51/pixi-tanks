@@ -46,7 +46,7 @@ export function GameCanvas() {
         gameRef.current = game;
 
         // ✅ Spawn player tank ONCE
-        game.spawnTank("player", playerName, "player");
+        game.spawnTank("player", playerName);
         tankIdRef.current = "player";
 
         // ✅ Main game loop
