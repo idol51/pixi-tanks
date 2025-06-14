@@ -1,14 +1,13 @@
-// apps/web/src/components/StartScreen.tsx
-
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGameStore } from "@/store/gameStore";
-import { useState } from "react";
 
 export const StartScreen = () => {
   const { startGame, setPlayerName } = useGameStore();
   const [name, setName] = useState("");
+  const adRef = useRef<HTMLDivElement>(null);
 
   const handleStart = () => {
     if (name.trim()) {
@@ -16,6 +15,17 @@ export const StartScreen = () => {
       startGame();
     }
   };
+
+  useEffect(() => {
+    if (adRef.current) {
+      try {
+        // Push ad when component mounts
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+      } catch (e) {
+        console.warn("AdSense ad failed to load", e);
+      }
+    }
+  }, []);
 
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
@@ -39,6 +49,18 @@ export const StartScreen = () => {
           >
             Start Game
           </Button>
+
+          {/* Google AdSense Unit */}
+          <div ref={adRef}>
+            <ins
+              className="adsbygoogle"
+              style={{ display: "block" }}
+              data-ad-client="ca-pub-XXXXXXXXXXXXXXX"
+              data-ad-slot="1234567890"
+              data-ad-format="auto"
+              data-full-width-responsive="true"
+            />
+          </div>
         </CardContent>
       </Card>
     </div>

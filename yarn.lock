@@ -2022,6 +2022,11 @@ uuid@^11.1.0:
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-11.1.0.tgz#9549028be1753bb934fc96e2bca09bb4105ae912"
   integrity sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==
 
+vite-plugin-adsense@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/vite-plugin-adsense/-/vite-plugin-adsense-1.1.1.tgz#ceb613c83bc31ef1a94e68fc9545adfb753e35c4"
+  integrity sha512-XctPzUBdgw1X5lyhyV5V8acpnE/3XvCQP6au6MedhXAocn9AU8eTSGNmEeI3mp/ebpCTXc7X1BXD1CKPsxnpOA==
+
 vite@^5.1.4:
   version "5.4.19"
   resolved "https://registry.yarnpkg.com/vite/-/vite-5.4.19.tgz#20efd060410044b3ed555049418a5e7d1998f959"
