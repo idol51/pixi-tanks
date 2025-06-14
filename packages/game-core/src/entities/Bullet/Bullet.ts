@@ -1,17 +1,28 @@
 import { Graphics, Point } from "pixi.js";
+import { TankStats } from "../../data/tank-stats";
 
 export class Bullet extends Graphics {
   radius: number = 5;
   velocity: Point;
-  speed: number = 10;
-  damage: number = 10;
-  lifetime: number = 2000; // ms
+  speed: number;
+  damage: number;
+  lifetime: number;
   createdAt: number;
   ownerId: string;
 
-  constructor(x: number, y: number, angle: number, ownerId: string) {
+  constructor(
+    x: number,
+    y: number,
+    angle: number,
+    ownerId: string,
+    stats: TankStats
+  ) {
     super();
     this.ownerId = ownerId;
+    this.damage = stats.bulletDamage;
+    this.speed = stats.bulletSpeed;
+    this.lifetime = 2000;
+
     this.circle(0, 0, this.radius).fill(0xffff00);
     this.position.set(x, y);
     this.velocity = new Point(

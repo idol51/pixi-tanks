@@ -1,0 +1,132 @@
+// packages/game-core/src/entities/Tank/BaseTank.ts
+import { Graphics, Point, Container, Text } from "pixi.js";
+import { Turret } from "../Turret/Turret";
+import { TankStats } from "../../data/tank-stats";
+import { ITank } from "./ITank";
+import { TankComponent } from "./TankComponent";
+
+export const TankType = {
+  PLAYER: "player",
+  AI: "ai",
+} as const;
+
+export type TankType = (typeof TankType)[keyof typeof TankType];
+
+export abstract class BaseTank extends Container implements ITank {
+  id: string;
+  name: string;
+  type: TankType;
+  velocity = { x: 0, y: 0 };
+  health: number;
+  maxHealth: number;
+  score = 0;
+
+  protected stats: TankStats;
+
+  // Rendering
+  protected body: Graphics;
+  protected nameText: Text;
+  public turret!: Turret;
+
+  // Component system
+  private components: TankComponent[] = [];
+
+  constructor(id: string, name: string, type: TankType, stats: TankStats) {
+    super();
+    this.id = id;
+    this.name = name;
+    this.type = type;
+    this.stats = stats;
+    this.health = stats.maxHealth;
+    this.maxHealth = stats.maxHealth;
+
+    this.position = new Point(0, 0);
+    this.rotation = 0;
+
+    // Visuals
+    this.body = this.createBody();
+    this.nameText = this.createNameText();
+
+    this.addChild(this.body, this.nameText);
+  }
+
+  // Public API
+  update(delta: number) {
+    for (const c of this.components) c.update(delta, this);
+
+    // Movement
+    this.position.x += this.velocity.x * delta * this.stats.speed;
+    this.position.y += this.velocity.y * delta * this.stats.speed;
+
+    this.nameText.position.set(0, 0);
+  }
+
+  move(direction: { x: number; y: number }) {
+    this.velocity = direction;
+  }
+
+  stop() {
+    this.velocity = { x: 0, y: 0 };
+  }
+
+  rotate(angle: number) {
+    this.rotation = angle;
+  }
+
+  aimTurret(angle: number) {
+    this.turret.aimAt(angle - this.rotation);
+  }
+
+  takeDamage(amount: number) {
+    this.health = Math.max(0, this.health - amount);
+  }
+
+  isAlive() {
+    return this.health > 0;
+  }
+
+  getRotationAngle() {
+    return this.rotation;
+  }
+
+  getStats(): TankStats {
+    return this.stats;
+  }
+
+  // Component Lifecycle
+  addComponent(component: TankComponent) {
+    this.components.push(component);
+    if (component.onAttach) {
+      component.onAttach(this); // Ensures visuals like health bar get added
+    }
+  }
+
+  removeComponent(component: TankComponent) {
+    this.components = this.components.filter((c) => c !== component);
+  }
+
+  getComponents(): TankComponent[] {
+    return this.components;
+  }
+
+  // Rendering Helpers
+  protected createBody() {
+    const g = new Graphics();
+    g.circle(0, 0, this.stats.size).fill(this.stats.color);
+    g.zIndex = 200;
+    return g;
+  }
+
+  protected createNameText() {
+    return new Text({
+      text: this.name,
+      style: {
+        fontFamily: "Arial",
+        fontSize: 12,
+        fill: "white",
+        align: "center",
+      },
+      anchor: { x: 0.5, y: -1.8 },
+    });
+  }
+}
