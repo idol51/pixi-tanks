@@ -5,6 +5,7 @@ import { TankStats } from "../../data/tank-stats";
 import { ITank } from "./ITank";
 import { TankComponent } from "./TankComponent";
 import { HealthComponent } from "./components/HealthComponent";
+import { WORLD_BOUNDS } from "../../data/world";
 
 export abstract class BaseTank extends Container implements ITank {
   id: string;
@@ -55,6 +56,16 @@ export abstract class BaseTank extends Container implements ITank {
     // Movement
     this.position.x += this.velocity.x * delta * this.stats.speed;
     this.position.y += this.velocity.y * delta * this.stats.speed;
+
+    const radius = this.stats.size;
+    this.position.x = Math.max(
+      radius,
+      Math.min(WORLD_BOUNDS.width - radius, this.position.x)
+    );
+    this.position.y = Math.max(
+      radius,
+      Math.min(WORLD_BOUNDS.height - radius, this.position.y)
+    );
 
     this.nameText.position.set(0, 0);
   }

@@ -36,8 +36,8 @@ export function GameCanvas() {
         const viewport = new Viewport({
           screenWidth: window.innerWidth,
           screenHeight: window.innerHeight,
-          worldWidth: 5000,
-          worldHeight: 5000,
+          worldWidth: 2000,
+          worldHeight: 2000,
           events: app.renderer.events,
         });
         canvasRef.current?.appendChild(app.canvas);

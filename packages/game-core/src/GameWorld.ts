@@ -25,11 +25,7 @@ export class GameWorld {
     const grid = new Grid(2000, 2000, 50, 0x444444);
     viewport.addChild(grid);
 
-    viewport
-      .drag()
-      .clamp({ direction: "all" })
-      .wheel({ smooth: 3, percent: 0.1 })
-      .decelerate();
+    viewport.drag().decelerate();
 
     app.stage.addChild(viewport);
     this.enemySpawner = new EnemySpawner(this);
