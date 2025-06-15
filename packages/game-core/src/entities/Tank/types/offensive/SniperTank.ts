@@ -1,12 +1,12 @@
 import { TANK_STATS } from "../../../../data/tank-stats";
-import { MissileTurret } from "../../../Turret/MissileTurret";
+import { SniperTurret } from "../../../Turret/SniperTurret";
 import { BaseTank } from "../../base-tank";
 import { FillInput } from "pixi.js";
 
-export class MissileLauncherTank extends BaseTank {
+export class SniperTank extends BaseTank {
   constructor(id: string, name: string, color: FillInput) {
-    super(id, name, color, TANK_STATS.missileLauncher);
-    this.turret = new MissileTurret();
+    super(id, name, color, TANK_STATS.sniper);
+    this.turret = new SniperTurret();
     this.addChild(this.turret);
   }
 }

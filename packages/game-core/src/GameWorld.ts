@@ -32,7 +32,12 @@ export class GameWorld {
   }
 
   spawnTank(id: string, name: string) {
-    const tank = TankFactory.createTank(TankVariant.MISSILE_LAUNCHER, name);
+    const tank = TankFactory.createTank(
+      TankVariant.MISSILE_LAUNCHER,
+      name,
+      id,
+      0x0000ff
+    );
     tank.position.set(this.app.screen.width / 2, this.app.screen.height / 2);
     this.viewport.addChild(tank);
     this.tanks.set(id, tank);
@@ -42,12 +47,14 @@ export class GameWorld {
     const tank = this.tanks.get(tankId);
     if (!tank || !tank.isAlive()) return;
 
-    const bullet = tank.turret.fire(tank);
-    if (!bullet) return;
+    const bullets = tank.turret.fire(tank);
+    if (!bullets) return;
 
-    const bulletId = uuid();
-    this.bullets.set(bulletId, bullet);
-    this.viewport.addChild(bullet);
+    for (const bullet of bullets) {
+      const bulletId = uuid();
+      this.bullets.set(bulletId, bullet);
+      this.viewport.addChild(bullet);
+    }
   }
 
   private checkCollision(bullet: Bullet, tank: ITank): boolean {
@@ -123,6 +130,7 @@ export class GameWorld {
 
     if (player) {
       this.viewport.moveCenter(player.position.x, player.position.y);
+      this.viewport.setZoom(player.getStats().zoom ?? 1);
     }
 
     this.enemySpawner.update(delta);

@@ -32,7 +32,7 @@ export class EnemySpawner {
     // Spawn a new AI enemy
     const id = `enemy-${uuid()}`;
     const name = "Grunt";
-    const enemy = TankFactory.createTank(TankVariant.BOT_TANK, name, id);
+    const enemy = TankFactory.createTank(TankVariant.BOT, name, id, 0xff0000);
     enemy.tags.add("ai");
 
     // Random spawn position within viewport bounds

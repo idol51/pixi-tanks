@@ -1,46 +1,20 @@
 import { Container, FillInput, Graphics } from "pixi.js";
 import { BulletFactory, BulletType } from "../../factories/BulletFactory";
 import { Bullet } from "../Bullet/Bullet";
+import { BaseTurret } from "./BaseTurret";
+import { BaseTank } from "../Tank/base-tank";
 
-// This class represents a turret that can aim and fire bullets.
-// It extends PIXI.Container to allow for easy integration into the game scene.
-export class Turret extends Container {
-  private graphics: Graphics;
-  protected lastFiredAt: number = 0;
-  private cooldown: number;
-  private bulletType: BulletType;
-
-  constructor(color: FillInput, cooldown: number, type: BulletType) {
-    super();
-
-    this.bulletType = type;
-
-    this.cooldown = cooldown; // milliseconds
-    this.graphics = new Graphics();
-    this.draw(color);
-    this.addChild(this.graphics);
-
-    this.position.set(0, 0);
-    this.zIndex = 300;
-  }
-
-  private draw(color: FillInput) {
+export class Turret extends BaseTurret {
+  draw() {
     this.graphics.clear();
-    this.graphics.rect(0, -4, 30, 8).fill(color);
+    this.graphics.rect(0, -4, 30, 8).fill(this.turretColor);
   }
 
   aimAt(angle: number) {
     this.rotation = angle;
   }
 
-  setBulletType(type: BulletType) {
-    this.bulletType = type;
-  }
-
-  fire(
-    owner: { position: { x: number; y: number }; id: string; rotation: number },
-    overrideAngle?: number
-  ): Bullet | null {
+  fire(owner: BaseTank, overrideAngle?: number): Bullet[] | null {
     const now = performance.now();
 
     if (now - this.lastFiredAt < this.cooldown) {
@@ -56,24 +30,18 @@ export class Turret extends Container {
     const spawnX = owner.position.x + offsetX;
     const spawnY = owner.position.y + offsetY;
 
-    return BulletFactory.create(
-      this.bulletType,
-      spawnX,
-      spawnY,
-      angle,
-      owner.id
-    );
-  }
-
-  setCooldown(ms: number) {
-    this.cooldown = ms;
-  }
-
-  getCooldown(): number {
-    return this.cooldown;
-  }
-
-  setColor(color: number) {
-    this.draw(color);
+    return [
+      BulletFactory.create(
+        BulletType.BULLET,
+        spawnX,
+        spawnY,
+        angle,
+        owner.id,
+        owner.color,
+        owner.getStats()
+      ),
+    ];
   }
 }
+
+// Turret class removed. Use BaseTurret for all turret implementations.

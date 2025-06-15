@@ -1,5 +1,5 @@
 // packages/game-core/src/entities/Tank/BaseTank.ts
-import { Graphics, Point, Container, Text } from "pixi.js";
+import { Graphics, Point, Container, Text, FillInput } from "pixi.js";
 import { Turret } from "../Turret/Turret";
 import { TankStats } from "../../data/tank-stats";
 import { ITank } from "./ITank";
@@ -15,6 +15,7 @@ export abstract class BaseTank extends Container implements ITank {
   maxHealth: number;
   score = 0;
   tags = new Set<string>();
+  color: FillInput;
 
   protected stats: TankStats;
 
@@ -26,13 +27,14 @@ export abstract class BaseTank extends Container implements ITank {
   // Component system
   private components: TankComponent[] = [];
 
-  constructor(id: string, name: string, stats: TankStats) {
+  constructor(id: string, name: string, color: FillInput, stats: TankStats) {
     super();
     this.id = id;
     this.name = name;
+    this.color = color;
     this.stats = stats;
-    this.health = stats.maxHealth;
-    this.maxHealth = stats.maxHealth;
+    this.health = stats.tankHealth;
+    this.maxHealth = stats.tankHealth;
 
     this.position = new Point(0, 0);
     this.rotation = 0;
@@ -54,10 +56,10 @@ export abstract class BaseTank extends Container implements ITank {
     this.healthBar.update(delta, this);
 
     // Movement
-    this.position.x += this.velocity.x * delta * this.stats.speed;
-    this.position.y += this.velocity.y * delta * this.stats.speed;
+    this.position.x += this.velocity.x * delta * this.stats.tankSpeed;
+    this.position.y += this.velocity.y * delta * this.stats.tankSpeed;
 
-    const radius = this.stats.size;
+    const radius = this.stats.tankSize;
     this.position.x = Math.max(
       radius,
       Math.min(WORLD_BOUNDS.width - radius, this.position.x)
@@ -121,7 +123,7 @@ export abstract class BaseTank extends Container implements ITank {
   // Rendering Helpers
   protected createBody() {
     const g = new Graphics();
-    g.circle(0, 0, this.stats.size).fill(this.stats.color);
+    g.circle(0, 0, this.stats.tankSize).fill(this.color);
     g.zIndex = 200;
     return g;
   }

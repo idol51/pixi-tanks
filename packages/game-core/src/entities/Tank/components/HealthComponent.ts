@@ -30,10 +30,10 @@ export class HealthComponent implements TankComponent {
 
     this.bar.clear();
 
-    const barWidth = stats.size * 2;
+    const barWidth = stats.tankSize * 2;
     const barHeight = 6;
     const barX = -barWidth / 2;
-    const barY = -stats.size - 12;
+    const barY = -stats.tankSize - 12;
     const ratio = Math.max(0, Math.min(1, health / maxHealth)); // clamp 0-1
 
     // Draw background bar

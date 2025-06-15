@@ -1,35 +1,29 @@
-import { Graphics, Point } from "pixi.js";
-import { BulletStats } from "../../data/bullet-stats";
+import { FillInput, Point } from "pixi.js";
+import { BulletStats } from "../../data/tank-stats";
+import { BaseBullet } from "./BaseBullet";
 
-export class MissileBullet extends Graphics {
-  radius = 6;
-  velocity: Point;
-  speed: number;
-  acceleration = 0.1;
-  damage: number;
-  lifetime = 3000;
-  createdAt: number;
-  ownerId: string;
-
+export class MissileBullet extends BaseBullet {
   constructor(
     x: number,
     y: number,
     angle: number,
     ownerId: string,
+    color: FillInput,
     stats: BulletStats
   ) {
-    super();
-    this.ownerId = ownerId;
-    this.damage = stats.damage;
-    this.speed = stats.speed;
-
-    this.circle(0, 0, this.radius).fill(0xff6600);
-    this.position.set(x, y);
-    this.velocity = new Point(
-      Math.cos(angle) * this.speed,
-      Math.sin(angle) * this.speed
+    super(
+      x,
+      y,
+      angle,
+      `${ownerId}-${performance.now()}`,
+      ownerId,
+      color,
+      stats
     );
-    this.createdAt = performance.now();
+  }
+
+  draw() {
+    this.graphics.circle(0, 0, this.radius).fill(this.color);
   }
 
   update(delta: number) {
@@ -37,9 +31,6 @@ export class MissileBullet extends Graphics {
     this.velocity.y += this.velocity.y * this.acceleration * delta;
     this.position.x += this.velocity.x * delta;
     this.position.y += this.velocity.y * delta;
-  }
-
-  isExpired() {
-    return performance.now() - this.createdAt > this.lifetime;
+    this.age += delta * 16.67; // Approximate ms per frame at 60fps
   }
 }
