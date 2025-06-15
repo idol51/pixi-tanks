@@ -55,9 +55,12 @@ export const StartScreen = () => {
             <ins
               className="adsbygoogle"
               style={{ display: "block" }}
-              data-ad-client="ca-pub-XXXXXXXXXXXXXXX"
-              data-ad-slot="1234567890"
+              data-ad-client="ca-pub-4300023215835808"
               data-ad-format="auto"
+              data-ad-slot="4390593532"
+              //   TODO: remove adtest in production
+              // This is for testing purposes only, remove in production
+              data-adtest="on"
               data-full-width-responsive="true"
             />
           </div>
