@@ -124,7 +124,7 @@ export abstract class BaseTank extends Container implements ITank {
   protected createBody() {
     const g = new Graphics();
     g.circle(0, 0, this.stats.tankSize).fill(this.color);
-    g.zIndex = 200;
+    g.zIndex = 1000;
     return g;
   }
 

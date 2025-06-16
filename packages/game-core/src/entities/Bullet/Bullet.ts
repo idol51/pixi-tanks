@@ -1,4 +1,4 @@
-import { FillInput, Graphics, Point } from "pixi.js";
+import { FillInput } from "pixi.js";
 import { BulletStats } from "../../data/tank-stats";
 import { BaseBullet } from "./BaseBullet";
 

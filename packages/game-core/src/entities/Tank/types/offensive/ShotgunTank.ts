@@ -8,7 +8,7 @@ import { FillInput } from "pixi.js";
 export class ShotgunTank extends BaseTank {
   constructor(id: string, name: string, color: FillInput) {
     super(id, name, color, TANK_STATS.shotgun);
-    this.turret = new ShotgunTurret();
+    this.turret = new ShotgunTurret(this);
     this.addChild(this.turret);
   }
 }

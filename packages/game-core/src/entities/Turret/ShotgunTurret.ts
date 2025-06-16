@@ -10,7 +10,7 @@ export class ShotgunTurret extends BaseTurret {
     this.graphics.rect(0, -4, 30, 8).fill(this.turretColor);
   }
 
-  fire(owner: BaseTank, overrideAngle?: number) {
+  fire(owner: BaseTank) {
     const now = performance.now();
 
     const fireRate = owner.getStats().fireRate;

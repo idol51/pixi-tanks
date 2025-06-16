@@ -1,24 +1,31 @@
-import { Container, FillInput, Graphics } from "pixi.js";
 import { BulletFactory, BulletType } from "../../factories/BulletFactory";
-import { Bullet } from "../Bullet/Bullet";
 import { BaseTurret } from "./BaseTurret";
 import { BaseTank } from "../Tank/base-tank";
 
 export class Turret extends BaseTurret {
   draw() {
     this.graphics.clear();
-    this.graphics.rect(0, -4, 30, 8).fill(this.turretColor);
+    this.graphics
+      .rect(
+        0,
+        -this.owner.getStats().bulletRadius,
+        40,
+        this.owner.getStats().bulletRadius * 2
+      )
+      .fill(this.turretColor);
   }
 
   aimAt(angle: number) {
     this.rotation = angle;
   }
 
-  fire(owner: BaseTank, overrideAngle?: number): Bullet[] | null {
+  fire(owner: BaseTank, overrideAngle?: number) {
     const now = performance.now();
 
-    if (now - this.lastFiredAt < this.cooldown) {
-      return null; // Still cooling down
+    const fireRate = owner.getStats().fireRate;
+    const cooldown = 1000 / fireRate;
+    if (now - this.lastFiredAt < cooldown) {
+      return []; // Still cooling down
     }
 
     this.lastFiredAt = now;

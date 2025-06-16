@@ -25,7 +25,7 @@ export const TANK_STATS: Record<TankVariant, TankStats> = {
     bulletDamage: 10,
     bulletSpeed: 4, // Speed of the bullet in pixels per frame
     bulletLifetime: 2000, // How long the bullet lasts before disappearing (in milliseconds)
-    bulletRadius: 4, // Radius of the bullet (in pixels)
+    bulletRadius: 8, // Radius of the bullet (in pixels)
   },
   missileLauncher: {
     tankSpeed: 1.5, // 1.5 pixels per frame
@@ -36,7 +36,7 @@ export const TANK_STATS: Record<TankVariant, TankStats> = {
     bulletSpeed: 1, // Speed of the missile in pixels per frame
     bulletLifetime: 3000, // How long the missile lasts before disappearing (in milliseconds)
     bulletAcceleration: 0.06, // Acceleration of the missile (in pixels per frame squared)
-    bulletRadius: 6, // Radius of the missile (in pixels)
+    bulletRadius: 8, // Radius of the missile (in pixels)
     zoom: 0.9, // 👈 zoom out slightly
   },
   shotgun: {

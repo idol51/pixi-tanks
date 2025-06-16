@@ -1,5 +1,4 @@
 import { Container, FillInput, Graphics, Point } from "pixi.js";
-import { Bullet } from "./Bullet";
 import { BulletStats } from "../../data/tank-stats";
 
 export abstract class BaseBullet extends Container {
@@ -38,6 +37,8 @@ export abstract class BaseBullet extends Container {
       Math.cos(angle) * this.speed,
       Math.sin(angle) * this.speed
     );
+
+    this.zIndex = -1;
 
     this.draw();
     this.addChild(this.graphics);

@@ -1,4 +1,4 @@
-import { FillInput, Point } from "pixi.js";
+import { FillInput } from "pixi.js";
 import { BulletStats } from "../../data/tank-stats";
 import { BaseBullet } from "./BaseBullet";
 
@@ -23,7 +23,22 @@ export class MissileBullet extends BaseBullet {
   }
 
   draw() {
-    this.graphics.circle(0, 0, this.radius).fill(this.color);
+    this.graphics.clear();
+    // Draw a triangle pointing to the right (missile forward direction)
+    this.graphics
+      .poly([
+        this.radius,
+        0, // tip (forward)
+        -this.radius,
+        -this.radius, // back left
+        -this.radius,
+        this.radius, // back right
+      ])
+      .fill(this.color);
+    // Set pivot to the center of the base for correct rotation
+    this.graphics.pivot.set(0, 0);
+    // Rotate to match velocity direction (point away from tank)
+    this.graphics.rotation = Math.atan2(this.velocity.y, this.velocity.x);
   }
 
   update(delta: number) {

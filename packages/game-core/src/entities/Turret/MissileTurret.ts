@@ -5,7 +5,14 @@ import { BulletFactory, BulletType } from "../../factories/BulletFactory";
 export class MissileTurret extends BaseTurret {
   draw() {
     this.graphics.clear();
-    this.graphics.rect(0, -4, 30, 8).fill(this.turretColor);
+    this.graphics
+      .rect(
+        0,
+        -this.owner.getStats().bulletRadius,
+        40,
+        this.owner.getStats().bulletRadius * 2
+      )
+      .fill(this.turretColor);
   }
 
   fire(owner: BaseTank, overrideAngle?: number) {
