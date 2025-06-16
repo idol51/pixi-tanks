@@ -10,7 +10,14 @@ export const RespawnScreen = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 text-white">
+    <div
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 text-white"
+      style={{
+        backgroundImage: `url(/bg-img.png)`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
       <div className="flex flex-col items-center gap-4">
         <h1 className="text-3xl font-bold">You Died, {playerName} 💀</h1>
         <Button

@@ -28,9 +28,22 @@ export const StartScreen = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
+    <div
+      className="fixed inset-0 flex items-center justify-center z-50"
+      style={{
+        backgroundImage: `url(/bg-img-2.png)`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
       <Card className="bg-white/10 border-white/20 backdrop-blur-md p-6 w-[90%] max-w-md text-white rounded-2xl">
         <CardHeader>
+          <img
+            src={"/logo/full-logo-nobg.png"}
+            alt="Pixi Tanks Logo"
+            className="mx-auto mb-2 w-64 h-30 object-cover"
+            draggable={false}
+          />
           <CardTitle className="text-center text-2xl">
             Enter Your Name
           </CardTitle>
