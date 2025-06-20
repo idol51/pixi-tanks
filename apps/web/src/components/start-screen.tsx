@@ -31,7 +31,7 @@ export const StartScreen = () => {
     <div
       className="fixed inset-0 flex items-center justify-center z-50"
       style={{
-        backgroundImage: `url(/bg-img-2.png)`,
+        backgroundImage: `url(/bg-img-2.webp)`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
