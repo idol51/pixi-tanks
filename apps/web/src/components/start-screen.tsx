@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +7,6 @@ import { useGameStore } from "@/store/gameStore";
 export const StartScreen = () => {
   const { startGame, setPlayerName } = useGameStore();
   const [name, setName] = useState("");
-  const adRef = useRef<HTMLDivElement>(null);
 
   const handleStart = () => {
     if (name.trim()) {
@@ -15,17 +14,6 @@ export const StartScreen = () => {
       startGame();
     }
   };
-
-  useEffect(() => {
-    if (adRef.current) {
-      try {
-        // Push ad when component mounts
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
-      } catch (e) {
-        console.warn("AdSense ad failed to load", e);
-      }
-    }
-  }, []);
 
   return (
     <div
@@ -63,20 +51,8 @@ export const StartScreen = () => {
             Start Game
           </Button>
 
-          {/* Google AdSense Unit */}
-          <div ref={adRef}>
-            <ins
-              className="adsbygoogle"
-              style={{ display: "block" }}
-              data-ad-client="ca-pub-4300023215835808"
-              data-ad-format="auto"
-              data-ad-slot="4390593532"
-              //   TODO: remove adtest in production
-              // This is for testing purposes only, remove in production
-              data-adtest="on"
-              data-full-width-responsive="true"
-            />
-          </div>
+          {/* Ad Unit */}
+          <div id="container-7d1f5d03fb44647518e5f3c916050137" />
         </CardContent>
       </Card>
     </div>
