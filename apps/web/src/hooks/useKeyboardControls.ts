@@ -19,5 +19,5 @@ export function useKeyboardControls() {
     };
   }, []);
 
-  return keysRef;
+  return keysRef.current;
 }

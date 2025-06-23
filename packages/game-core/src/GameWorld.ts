@@ -1,140 +1,74 @@
-import { Application } from "pixi.js";
-import { Viewport } from "pixi-viewport";
-import { BaseTank } from "./entities/Tank/base-tank";
+import { InputComponent } from "./components/InputComponent";
+import { EntityManager } from "./ecs/EntityManager";
+import { System } from "./ecs/System";
 import { Grid } from "./entities/Grid";
-import { v4 as uuid } from "uuid";
-import { gameEvents } from "./GameEvents";
-import { ITank } from "./entities/Tank/ITank";
-import { Bullet } from "./entities/Bullet/Bullet";
-import { TankFactory, TankVariant } from "./factories/TankFactory";
-import { EnemySpawner } from "./systems/EnemySpawner";
+import { spawnTank } from "./factories/TankFactory";
+import { HealthSystem } from "./systems/HealthSystem";
+import { MovementSystem } from "./systems/MovementSystem";
+import { RenderSystem } from "./systems/RenderSystem";
+import { Viewport } from "pixi-viewport";
+import { Engine } from "matter-js";
+import { engine } from "./physics/engine";
 
+// game/GameWorld.ts
 export class GameWorld {
-  app: Application;
-  viewport: Viewport;
-  tanks: Map<string, BaseTank> = new Map();
-  bullets: Map<string, Bullet> = new Map();
-  playerId: string;
-  private enemySpawner: EnemySpawner;
+  private entityManager = new EntityManager();
+  private systems: System[] = [];
 
-  constructor(app: Application, viewport: Viewport, playerId: string) {
-    this.app = app;
-    this.playerId = playerId;
-    this.viewport = viewport;
-
-    const grid = new Grid(2000, 2000, 50, 0x444444);
-    viewport.addChild(grid);
-
+  constructor(private viewport: Viewport) {
+    const grid = new Grid(5000, 5000);
     viewport.drag().decelerate();
-
-    app.stage.addChild(viewport);
-    this.enemySpawner = new EnemySpawner(this);
-  }
-
-  spawnTank(id: string, name: string) {
-    const tank = TankFactory.createTank(
-      TankVariant.MISSILE_LAUNCHER,
-      name,
-      id,
-      0x0000ff
+    viewport.addChild(grid);
+    this.systems.push(
+      new MovementSystem(),
+      new HealthSystem(),
+      new RenderSystem(this.viewport)
     );
-    tank.position.set(this.app.screen.width / 2, this.app.screen.height / 2);
-    this.viewport.addChild(tank);
-    this.tanks.set(id, tank);
   }
 
-  fireBullet(tankId: string) {
-    const tank = this.tanks.get(tankId);
-    if (!tank || !tank.isAlive()) return;
+  init() {
+    // 🧠 Here’s where you add tanks, bullets, obstacles etc.
+    const tank = spawnTank("player", this.entityManager, 400, 300, {
+      health: 100,
+      color: 0x00ff00,
+    });
+    tank.addComponent("Input", new InputComponent());
 
-    const bullets = tank.turret.fire(tank);
-    if (!bullets) return;
-
-    for (const bullet of bullets) {
-      const bulletId = uuid();
-      this.bullets.set(bulletId, bullet);
-      this.viewport.addChild(bullet);
+    // ✅ Spawn enemies
+    for (let i = 0; i < 5; i++) {
+      const x = Math.random() * 800;
+      const y = Math.random() * 600;
+      spawnTank(`enemy-${i + 1}`, this.entityManager, x, y, {
+        health: 80,
+        color: 0xff4444,
+      });
     }
   }
 
-  private checkCollision(bullet: Bullet, tank: ITank): boolean {
-    const dx = bullet.position.x - tank.position.x;
-    const dy = bullet.position.y - tank.position.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    const bulletRadius = bullet.radius ?? 4;
-    const tankRadius = 20;
-
-    return distance < bulletRadius + tankRadius;
-  }
-
-  getPlayerScore() {
-    const playerTank = this.tanks.get(this.playerId);
-    return playerTank?.score ?? 0;
-  }
-
-  updateLeaderboard() {
-    const scores = Array.from(this.tanks.values())
-      .map((tank) => ({
-        id: tank.id,
-        name: tank.name,
-        score: tank.score,
-      }))
-      .sort((a, b) => b.score - a.score);
-
-    gameEvents.emit("scoreUpdate", scores);
-  }
-
-  update(delta: number) {
-    for (const [id, tank] of Array.from(this.tanks)) {
-      tank.update(delta);
-
-      if (!tank.isAlive()) {
-        this.viewport.removeChild(tank);
-        this.tanks.delete(id);
-
-        if (id === this.playerId) {
-          gameEvents.emit("playerDied");
-        }
-      }
+  update(delta: number, keys: Set<string>) {
+    Engine.update(engine, delta);
+    for (const system of this.systems) {
+      system.update(delta, this.entityManager);
     }
 
-    for (const [bulletId, bullet] of Array.from(this.bullets)) {
-      bullet.update(delta);
+    const tank = this.entityManager.getEntity("player");
+    const physicsBody = tank.getComponent("PhysicsBody");
+    const input = tank.getComponent("Input");
 
-      if (bullet.isExpired()) {
-        this.bullets.delete(bulletId);
-        this.viewport.removeChild(bullet);
-        continue;
-      }
-
-      for (const [tankId, tank] of Array.from(this.tanks)) {
-        if (tankId === bullet.ownerId) continue;
-
-        if (this.checkCollision(bullet, tank)) {
-          tank.takeDamage(bullet.damage);
-
-          const shooter = this.tanks.get(bullet.ownerId);
-          if (shooter && !tank.isAlive()) {
-            shooter.score += 100;
-          }
-
-          this.bullets.delete(bulletId);
-          this.viewport.removeChild(bullet);
-          break;
-        }
-      }
+    this.viewport.moveCenter(
+      physicsBody.body.position.x,
+      physicsBody.body.position.y
+    );
+    if (input) {
+      input.direction = { x: 0, y: 0 };
+      if (keys.has("w") || keys.has("ArrowUp")) input.direction.y = -1;
+      if (keys.has("s") || keys.has("ArrowDown")) input.direction.y = 1;
+      if (keys.has("a") || keys.has("ArrowLeft")) input.direction.x = -1;
+      if (keys.has("d") || keys.has("ArrowRight")) input.direction.x = 1;
     }
+  }
 
-    const player = this.tanks.get(this.playerId);
-
-    if (player) {
-      this.viewport.moveCenter(player.position.x, player.position.y);
-      this.viewport.setZoom(player.getStats().zoom ?? 1);
-    }
-
-    this.enemySpawner.update(delta);
-
-    this.updateLeaderboard();
+  getEntityManager() {
+    return this.entityManager;
   }
 }

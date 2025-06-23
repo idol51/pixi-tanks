@@ -4,6 +4,7 @@ export class Grid extends Graphics {
   constructor(width: number, height: number, spacing = 50, color = 0x333333) {
     super();
     this.drawGrid(width, height, spacing, color);
+    this.zIndex = -100;
   }
 
   private drawGrid(

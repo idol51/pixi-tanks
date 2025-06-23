@@ -1,42 +1,31 @@
-import { v4 as uuid } from "uuid";
-import { BaseTank } from "../entities/Tank/base-tank";
-import { MissileLauncherTank } from "../entities/Tank/types/offensive/MissileLauncherTank";
-import { BotTank } from "../entities/Tank/types/basic/BotTank";
-import { ShotgunTank } from "../entities/Tank/types/offensive/ShotgunTank";
-import { SniperTank } from "../entities/Tank/types/offensive/SniperTank";
-import { FillInput } from "pixi.js";
+import { HealthComponent } from "../components/HealthComponent";
+import { PhysicsBodyComponent } from "../components/PhysicsBodyComponent";
+import { SpriteComponent } from "../components/SpriteComponent";
+import { EntityManager } from "../ecs/EntityManager";
+import { Graphics } from "pixi.js";
+import { createTankBody } from "../physics/createTankBody";
 
-export enum TankVariant {
-  BOT = "bot",
-  MISSILE_LAUNCHER = "missileLauncher",
-  SHOTGUN = "shotgun",
-  SNIPER = "sniper",
-}
+export function spawnTank(
+  id: string,
+  em: EntityManager,
+  x: number,
+  y: number,
+  options?: { health?: number; color?: number }
+) {
+  const tank = em.createEntity(id);
 
-export class TankFactory {
-  static createTank(
-    variant: TankVariant,
-    name: string,
-    id = uuid(),
-    color: FillInput
-  ): BaseTank {
-    switch (variant) {
-      case TankVariant.BOT:
-        return new BotTank(id, name, color);
+  // PIXI graphics for rendering
+  const graphic = new Graphics()
+    .circle(0, 0, 20)
+    .fill(options?.color ?? 0x00ff00);
+  graphic.zIndex = 10;
 
-      case TankVariant.MISSILE_LAUNCHER:
-        return new MissileLauncherTank(id, name, color);
+  // Matter body
+  const body = createTankBody(x, y, 20);
 
-      case TankVariant.SHOTGUN:
-        return new ShotgunTank(id, name, color);
+  tank.addComponent("Health", new HealthComponent(options?.health ?? 100));
+  tank.addComponent("Sprite", new SpriteComponent(graphic));
+  tank.addComponent("PhysicsBody", new PhysicsBodyComponent(body));
 
-      case TankVariant.SNIPER:
-        return new SniperTank(id, name, color);
-
-      // Add other variants here...
-
-      default:
-        throw new Error(`Unknown tank variant: ${variant}`);
-    }
-  }
+  return tank;
 }
