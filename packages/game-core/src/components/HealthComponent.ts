@@ -1,8 +1,22 @@
-import { Component } from "../ecs/Component";
+// components/HealthComponent.ts
+export class HealthComponent {
+  current: number;
+  max: number;
 
-export class HealthComponent implements Component {
-  health: number;
-  constructor(public maxHealth: number) {
-    this.health = maxHealth;
+  constructor(max: number) {
+    this.max = max;
+    this.current = max;
+  }
+
+  takeDamage(amount: number) {
+    this.current = Math.max(0, this.current - amount);
+  }
+
+  isDead(): boolean {
+    return this.current <= 0;
+  }
+
+  heal(amount: number) {
+    this.current = Math.min(this.max, this.current + amount);
   }
 }

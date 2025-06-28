@@ -6,12 +6,13 @@ export class RenderSystem extends System {
   constructor(private viewport: Viewport) {
     super();
   }
-  update(delta: number, manager: EntityManager): void {
+  update(manager: EntityManager): void {
     const entities = manager.queryByComponents("PhysicsBody", "Sprite");
 
     for (const entity of entities) {
       const physicsBody = entity.getComponent("PhysicsBody")!;
       const sprite = entity.getComponent("Sprite")!;
+      const turret = entity.getComponent("Turret");
 
       this.viewport.addChild(sprite.sprite);
 
@@ -19,6 +20,11 @@ export class RenderSystem extends System {
         physicsBody.body.position.x,
         physicsBody.body.position.y
       );
+
+      if (turret) {
+        this.viewport.addChild(turret.getView());
+        turret.setPosition(physicsBody.body.position);
+      }
     }
   }
 }

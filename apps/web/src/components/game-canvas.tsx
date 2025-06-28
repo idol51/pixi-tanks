@@ -2,20 +2,18 @@ import { useEffect, useRef } from "react";
 import { Application } from "pixi.js";
 import { GameWorld } from "@pixi-tanks/game-core";
 import { useKeyboardControls } from "../hooks/useKeyboardControls";
-import { useMouseAngle } from "../hooks/useMouseAngle";
 import { Button } from "@/components/ui/button";
 import { Viewport } from "pixi-viewport";
 import { useGameEvents } from "../hooks/useGameEvents";
 import { Leaderboard } from "./leader-board";
-import { useGameStore } from "@/store/gameStore";
+import { useMouseControls } from "@/hooks/useMouseControls";
 
 export function GameCanvas() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const gameRef = useRef<GameWorld | null>(null);
   const keys = useKeyboardControls();
-
-  const { playerName } = useGameStore();
+  const mouse = useMouseControls();
 
   useGameEvents();
 
@@ -48,7 +46,7 @@ export function GameCanvas() {
 
         // ✅ Main game loop
         app.ticker.add(({ deltaMS }) => {
-          game.update(deltaMS, keys);
+          game.update(deltaMS, keys, mouse);
         });
       });
 

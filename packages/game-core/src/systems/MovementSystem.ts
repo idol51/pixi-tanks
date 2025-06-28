@@ -4,7 +4,7 @@ import { Body } from "matter-js";
 import { Entity } from "../ecs/Entity";
 
 export class MovementSystem extends System {
-  update(delta: number, entityManager: EntityManager): void {
+  update(entityManager: EntityManager): void {
     const entities = entityManager.queryByComponents("Input", "PhysicsBody");
 
     for (const entity of entities) {
@@ -14,9 +14,20 @@ export class MovementSystem extends System {
       if (!input || !physicsBody) continue;
 
       const { x, y } = input.direction;
-      const speed = 5;
+      const forceMagnitude = 0.0008;
 
-      Body.setVelocity(physicsBody.body, { x: x * speed, y: y * speed });
+      const magnitude = Math.sqrt(x ** 2 + y ** 2);
+      if (magnitude > 0) {
+        const normalizedX = x / magnitude;
+        const normalizedY = y / magnitude;
+
+        const force = {
+          x: normalizedX * forceMagnitude,
+          y: normalizedY * forceMagnitude,
+        };
+
+        Body.applyForce(physicsBody.body, physicsBody.body.position, force);
+      }
     }
   }
 

@@ -4,14 +4,29 @@ import { SpriteComponent } from "../components/SpriteComponent";
 import { EntityManager } from "../ecs/EntityManager";
 import { Graphics } from "pixi.js";
 import { createTankBody } from "../physics/createTankBody";
+import { TurretComponent } from "../components/TurretComponent";
+import { HealthBarRendererComponent } from "../components/HealthBarRendererComponent";
+import { Viewport } from "pixi-viewport";
+import { attachEntityToBody } from "../utils/bodyEntityMap";
+import { CollisionComponent } from "../components/CollisionComponent";
 
-export function spawnTank(
-  id: string,
-  em: EntityManager,
-  x: number,
-  y: number,
-  options?: { health?: number; color?: number }
-) {
+export function spawnTank({
+  em,
+  id,
+  viewport,
+  x,
+  y,
+  options,
+  teamId,
+}: {
+  id: string;
+  em: EntityManager;
+  viewport: Viewport;
+  x: number;
+  y: number;
+  options?: { health?: number; color?: number };
+  teamId?: string;
+}) {
   const tank = em.createEntity(id);
 
   // PIXI graphics for rendering
@@ -23,9 +38,27 @@ export function spawnTank(
   // Matter body
   const body = createTankBody(x, y, 20);
 
+  attachEntityToBody(body, tank);
+
   tank.addComponent("Health", new HealthComponent(options?.health ?? 100));
+  tank.addComponent("HealthBar", new HealthBarRendererComponent(viewport));
   tank.addComponent("Sprite", new SpriteComponent(graphic));
   tank.addComponent("PhysicsBody", new PhysicsBodyComponent(body));
+  tank.addComponent(
+    "Turret",
+    new TurretComponent([
+      { offset: [10, -10], angleOffset: -0.1 },
+      { offset: [10, 0] },
+      { offset: [10, 10], angleOffset: 0.1 },
+    ])
+  );
+  tank.addComponent(
+    "Collision",
+    new CollisionComponent({
+      group: "tank",
+      teamId,
+    })
+  );
 
   return tank;
 }

@@ -3,12 +3,16 @@ import { EntityManager } from "./ecs/EntityManager";
 import { System } from "./ecs/System";
 import { Grid } from "./entities/Grid";
 import { spawnTank } from "./factories/TankFactory";
-import { HealthSystem } from "./systems/HealthSystem";
 import { MovementSystem } from "./systems/MovementSystem";
 import { RenderSystem } from "./systems/RenderSystem";
 import { Viewport } from "pixi-viewport";
 import { Engine } from "matter-js";
 import { engine } from "./physics/engine";
+import { TurretAimingSystem } from "./systems/TurretAimSystem";
+import { ShootingSystem } from "./systems/ShootingSystem";
+import { HealthSystem } from "./systems/HealthSystem";
+import { HealthBarSystem } from "./systems/HealthBarSystem";
+import { CollisionSystem } from "./systems/CollisionSystem";
 
 // game/GameWorld.ts
 export class GameWorld {
@@ -22,15 +26,26 @@ export class GameWorld {
     this.systems.push(
       new MovementSystem(),
       new HealthSystem(),
-      new RenderSystem(this.viewport)
+      new HealthBarSystem(),
+      new RenderSystem(this.viewport),
+      new TurretAimingSystem(this.viewport),
+      new ShootingSystem(),
+      new CollisionSystem(this.entityManager)
     );
   }
 
   init() {
     // 🧠 Here’s where you add tanks, bullets, obstacles etc.
-    const tank = spawnTank("player", this.entityManager, 400, 300, {
-      health: 100,
-      color: 0x00ff00,
+    const tank = spawnTank({
+      id: "player",
+      em: this.entityManager,
+      viewport: this.viewport,
+      x: 400,
+      y: 300,
+      options: {
+        health: 100,
+        color: 0x00ff00,
+      },
     });
     tank.addComponent("Input", new InputComponent());
 
@@ -38,33 +53,55 @@ export class GameWorld {
     for (let i = 0; i < 5; i++) {
       const x = Math.random() * 800;
       const y = Math.random() * 600;
-      spawnTank(`enemy-${i + 1}`, this.entityManager, x, y, {
-        health: 80,
-        color: 0xff4444,
+      spawnTank({
+        id: `enemy-${i + 1}`,
+        em: this.entityManager,
+        viewport: this.viewport,
+        x,
+        y,
+        options: {
+          health: 80,
+          color: 0xff4444,
+        },
       });
     }
   }
 
-  update(delta: number, keys: Set<string>) {
+  update(
+    delta: number,
+    keys: Set<string>,
+    mouse: Map<"x" | "y" | "mousedown", unknown>
+  ) {
     Engine.update(engine, delta);
     for (const system of this.systems) {
-      system.update(delta, this.entityManager);
+      system.update(this.entityManager);
     }
 
     const tank = this.entityManager.getEntity("player");
-    const physicsBody = tank.getComponent("PhysicsBody");
-    const input = tank.getComponent("Input");
 
-    this.viewport.moveCenter(
-      physicsBody.body.position.x,
-      physicsBody.body.position.y
-    );
-    if (input) {
-      input.direction = { x: 0, y: 0 };
-      if (keys.has("w") || keys.has("ArrowUp")) input.direction.y = -1;
-      if (keys.has("s") || keys.has("ArrowDown")) input.direction.y = 1;
-      if (keys.has("a") || keys.has("ArrowLeft")) input.direction.x = -1;
-      if (keys.has("d") || keys.has("ArrowRight")) input.direction.x = 1;
+    if (tank) {
+      const physicsBody = tank.getComponent("PhysicsBody");
+      const input = tank.getComponent("Input");
+
+      if (!physicsBody || !input) return;
+
+      this.viewport.moveCenter(
+        physicsBody.body.position.x,
+        physicsBody.body.position.y
+      );
+      if (input) {
+        input.direction = { x: 0, y: 0 };
+        input.fire = false;
+        if (keys.has("w") || keys.has("ArrowUp")) input.direction.y = -1;
+        if (keys.has("s") || keys.has("ArrowDown")) input.direction.y = 1;
+        if (keys.has("a") || keys.has("ArrowLeft")) input.direction.x = -1;
+        if (keys.has("d") || keys.has("ArrowRight")) input.direction.x = 1;
+
+        input.fire = keys.has(" ") || (mouse.get("mousedown") as boolean);
+
+        input.mousePosition.x = (mouse.get("x") || 0) as number;
+        input.mousePosition.y = (mouse.get("y") || 0) as number;
+      }
     }
   }
 
