@@ -7,6 +7,8 @@ import { Viewport } from "pixi-viewport";
 import { useGameEvents } from "../hooks/useGameEvents";
 import { Leaderboard } from "./leader-board";
 import { useMouseControls } from "@/hooks/useMouseControls";
+import { MiniMap } from "./mini-map";
+import { useGameStore } from "@/store/gameStore";
 
 export function GameCanvas() {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -14,6 +16,8 @@ export function GameCanvas() {
   const gameRef = useRef<GameWorld | null>(null);
   const keys = useKeyboardControls();
   const mouse = useMouseControls();
+
+  const { playerPos } = useGameStore();
 
   useGameEvents();
 
@@ -40,7 +44,7 @@ export function GameCanvas() {
 
         app.stage.addChild(viewport);
 
-        const game = new GameWorld(viewport);
+        const game = new GameWorld(viewport, 5000, 5000);
         game.init();
         gameRef.current = game;
 
@@ -63,6 +67,10 @@ export function GameCanvas() {
         <Button variant="default">Respawn</Button>
         <div className="text-white">Health: 100</div>
       </div>
+      <MiniMap
+        worldSize={{ width: 5000, height: 5000 }}
+        playerPos={playerPos}
+      />
     </div>
   );
 }

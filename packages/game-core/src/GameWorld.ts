@@ -1,7 +1,6 @@
 import { InputComponent } from "./components/InputComponent";
 import { EntityManager } from "./ecs/EntityManager";
 import { System } from "./ecs/System";
-import { Grid } from "./entities/Grid";
 import { spawnTank } from "./factories/TankFactory";
 import { MovementSystem } from "./systems/MovementSystem";
 import { RenderSystem } from "./systems/RenderSystem";
@@ -14,16 +13,21 @@ import { HealthSystem } from "./systems/HealthSystem";
 import { HealthBarSystem } from "./systems/HealthBarSystem";
 import { CollisionSystem } from "./systems/CollisionSystem";
 import { AISystem } from "./systems/AISystem";
+import { createWorld } from "./physics/createWorld";
+import { gameEvents } from "./GameEvents";
 
 // game/GameWorld.ts
 export class GameWorld {
   private entityManager = new EntityManager();
   private systems: System[] = [];
 
-  constructor(private viewport: Viewport) {
-    const grid = new Grid(5000, 5000);
+  constructor(
+    private viewport: Viewport,
+    worldWidth: number,
+    worldHeight: number
+  ) {
     viewport.drag().decelerate();
-    viewport.addChild(grid);
+    createWorld(viewport, worldWidth, worldHeight);
     this.systems.push(
       new MovementSystem(),
       new HealthSystem(),
@@ -52,7 +56,7 @@ export class GameWorld {
     tank.addComponent("Input", new InputComponent());
 
     // ✅ Spawn enemies
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 1; i++) {
       const x = Math.random() * 800;
       const y = Math.random() * 600;
       spawnTank({
@@ -88,6 +92,11 @@ export class GameWorld {
       const input = tank.getComponent("Input");
 
       if (!physicsBody || !input) return;
+
+      gameEvents.emit("playerPos", {
+        x: physicsBody.body.position.x,
+        y: physicsBody.body.position.y,
+      });
 
       this.viewport.moveCenter(
         physicsBody.body.position.x,
