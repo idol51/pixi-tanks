@@ -13,6 +13,7 @@ import { ShootingSystem } from "./systems/ShootingSystem";
 import { HealthSystem } from "./systems/HealthSystem";
 import { HealthBarSystem } from "./systems/HealthBarSystem";
 import { CollisionSystem } from "./systems/CollisionSystem";
+import { AISystem } from "./systems/AISystem";
 
 // game/GameWorld.ts
 export class GameWorld {
@@ -30,7 +31,8 @@ export class GameWorld {
       new RenderSystem(this.viewport),
       new TurretAimingSystem(this.viewport),
       new ShootingSystem(),
-      new CollisionSystem(this.entityManager)
+      new CollisionSystem(this.entityManager),
+      new AISystem()
     );
   }
 
@@ -59,10 +61,12 @@ export class GameWorld {
         viewport: this.viewport,
         x,
         y,
+        isAI: true,
         options: {
           health: 80,
           color: 0xff4444,
         },
+        teamId: "enemy",
       });
     }
   }
@@ -92,10 +96,10 @@ export class GameWorld {
       if (input) {
         input.direction = { x: 0, y: 0 };
         input.fire = false;
-        if (keys.has("w") || keys.has("ArrowUp")) input.direction.y = -1;
-        if (keys.has("s") || keys.has("ArrowDown")) input.direction.y = 1;
-        if (keys.has("a") || keys.has("ArrowLeft")) input.direction.x = -1;
-        if (keys.has("d") || keys.has("ArrowRight")) input.direction.x = 1;
+        if (keys.has("w") || keys.has("arrowup")) input.direction.y = -1;
+        if (keys.has("s") || keys.has("arrowdown")) input.direction.y = 1;
+        if (keys.has("a") || keys.has("arrowleft")) input.direction.x = -1;
+        if (keys.has("d") || keys.has("arrowright")) input.direction.x = 1;
 
         input.fire = keys.has(" ") || (mouse.get("mousedown") as boolean);
 

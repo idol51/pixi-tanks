@@ -22,7 +22,7 @@ export class RenderSystem extends System {
       );
 
       if (turret) {
-        this.viewport.addChild(turret.getView());
+        // this.viewport.addChild(turret.getView());
         turret.setPosition(physicsBody.body.position);
       }
     }

@@ -29,7 +29,10 @@ export class CollisionSystem {
       if (!colA || !colB) continue;
 
       // Skip self-hit
-      if (colA.config.ownerId && colA.config.ownerId === colB.config.ownerId)
+      if (
+        (colA.config.ownerId && entityB.id === colA.config.ownerId) ||
+        (colB.config.ownerId && entityA.id === colB.config.ownerId)
+      )
         continue;
 
       // Skip friendly fire

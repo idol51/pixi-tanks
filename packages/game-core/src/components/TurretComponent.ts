@@ -2,6 +2,7 @@ import { Graphics, Container, Point } from "pixi.js";
 import { Component } from "../ecs/Component";
 import { Vector } from "matter-js";
 import { Barrel } from "./Barrel";
+import { Viewport } from "pixi-viewport";
 
 export class TurretComponent implements Component {
   container: Container;
@@ -9,15 +10,20 @@ export class TurretComponent implements Component {
   barrels: Barrel[] = [];
 
   constructor(
-    public layout: { offset: [number, number]; angleOffset?: number }[]
+    public layout: { offset: [number, number]; angleOffset?: number }[],
+    viewport: Viewport
   ) {
     this.container = new Container();
     for (const b of layout) {
       const barrel = new Barrel(new Point(...b.offset), b.angleOffset ?? 0);
       this.barrels.push(barrel);
     }
-    this.turret = new Graphics().rect(0, -4, 30, 8).fill(0xcccccc);
+    const turretSprite = new Graphics().rect(0, -4, 30, 8).fill(0xcccccc);
+    turretSprite.zIndex = 1;
+
+    this.turret = turretSprite;
     this.container.addChild(this.turret);
+    viewport.addChild(this.container);
   }
 
   setRotation(angle: number) {

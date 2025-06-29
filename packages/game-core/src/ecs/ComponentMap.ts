@@ -1,3 +1,4 @@
+import { AIControllerComponent } from "../components/AIControllerComponent";
 import { CollisionComponent } from "../components/CollisionComponent";
 import { HealthBarRendererComponent } from "../components/HealthBarRendererComponent";
 import { HealthComponent } from "../components/HealthComponent";
@@ -14,4 +15,5 @@ export interface ComponentMap {
   Turret: TurretComponent;
   HealthBar: HealthBarRendererComponent;
   Collision: CollisionComponent;
+  AIController: AIControllerComponent;
 }

@@ -15,8 +15,6 @@ export class TurretAimingSystem implements System {
 
       const { mousePosition } = input;
 
-      this.viewport.addChild(turret.getView());
-
       const dx = mousePosition.x - this.viewport.screenWidth / 2;
       const dy = mousePosition.y - this.viewport.screenHeight / 2;
       const angle = Math.atan2(dy, dx);
