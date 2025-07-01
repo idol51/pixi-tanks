@@ -15,6 +15,9 @@ import { CollisionSystem } from "./systems/CollisionSystem";
 import { AISystem } from "./systems/AISystem";
 import { createWorld } from "./physics/createWorld";
 import { gameEvents } from "./GameEvents";
+import { createWanderingShape } from "./factories/WanderingShapeFactory";
+import { spawnNest } from "./utils/spawnNest";
+import { WanderingSystem } from "./systems/WanderingSystem";
 
 // game/GameWorld.ts
 export class GameWorld {
@@ -36,7 +39,8 @@ export class GameWorld {
       new TurretAimingSystem(this.viewport),
       new ShootingSystem(),
       new CollisionSystem(this.entityManager),
-      new AISystem()
+      new AISystem(),
+      new WanderingSystem()
     );
   }
 
@@ -73,6 +77,27 @@ export class GameWorld {
         teamId: "enemy",
       });
     }
+
+    for (let i = 0; i < 10; i++) {
+      const shape = createWanderingShape(
+        this.entityManager,
+        "triangle",
+        Math.random() * 200,
+        Math.random() * 200
+      );
+    }
+
+    for (let i = 0; i < 10; i++) {
+      const shape = createWanderingShape(
+        this.entityManager,
+        "square",
+        Math.random() * 200,
+        Math.random() * 200
+      );
+    }
+
+    // Nest in center
+    const nest = spawnNest(this.entityManager, 2500, 2500, 8);
   }
 
   update(

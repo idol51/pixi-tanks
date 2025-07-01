@@ -6,6 +6,7 @@ import { InputComponent } from "../components/InputComponent";
 import { PhysicsBodyComponent } from "../components/PhysicsBodyComponent";
 import { SpriteComponent } from "../components/SpriteComponent";
 import { TurretComponent } from "../components/TurretComponent";
+import { WanderingComponent } from "../components/WanderingComponent";
 
 export interface ComponentMap {
   Health: HealthComponent;
@@ -16,4 +17,5 @@ export interface ComponentMap {
   HealthBar: HealthBarRendererComponent;
   Collision: CollisionComponent;
   AIController: AIControllerComponent;
+  Wandering: WanderingComponent;
 }

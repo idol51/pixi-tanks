@@ -21,6 +21,8 @@ export class RenderSystem extends System {
         physicsBody.body.position.y
       );
 
+      sprite.sprite.rotation = physicsBody.body.angle;
+
       if (turret) {
         // this.viewport.addChild(turret.getView());
         turret.setPosition(physicsBody.body.position);
