@@ -3,6 +3,8 @@ import { useGameEvents } from "@/hooks/useGameEvents";
 import { StartScreen } from "@/components/start-screen";
 import { RespawnScreen } from "@/components/respawn-screen";
 import { GameCanvas } from "@/components/game-canvas";
+import { OrientationOverlay } from "@/components/orientation-overlay";
+import FullscreenOverlay from "./components/fullscreen-overlay";
 
 export default function App() {
   const started = useGameStore((s) => s.started);
@@ -11,6 +13,8 @@ export default function App() {
 
   return (
     <>
+      <OrientationOverlay />
+      <FullscreenOverlay />
       {!started && <StartScreen />}
       {started && !isAlive && <RespawnScreen />}
       {started && isAlive && <GameCanvas />}
