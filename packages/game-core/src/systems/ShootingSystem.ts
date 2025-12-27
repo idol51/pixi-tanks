@@ -18,7 +18,7 @@ export class ShootingSystem implements System {
       const angle = turret.container.rotation;
 
       for (const barrel of turret.getBarrels()) {
-        if (!barrel.canFire() || !input.fire) continue;
+        if (!barrel.canFire() || !input.isShooting) continue;
 
         const globalAngle = angle + barrel.angleOffset;
         const dx = Math.cos(globalAngle);

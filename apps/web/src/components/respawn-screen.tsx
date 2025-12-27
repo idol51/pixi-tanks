@@ -11,7 +11,7 @@ export const RespawnScreen = () => {
 
   return (
     <div
-      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 text-white"
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-40 text-white"
       style={{
         backgroundImage: `url(/bg-img.webp)`,
         backgroundSize: "cover",

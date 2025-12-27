@@ -1,21 +1,24 @@
 import { useEffect, useRef } from "react";
 import { Application } from "pixi.js";
 import { GameWorld } from "@pixi-tanks/game-core";
-import { useKeyboardControls } from "../hooks/useKeyboardControls";
 import { Button } from "@/components/ui/button";
 import { Viewport } from "pixi-viewport";
 import { useGameEvents } from "../hooks/useGameEvents";
 import { Leaderboard } from "./leader-board";
-import { useMouseControls } from "@/hooks/useMouseControls";
 import { MiniMap } from "./mini-map";
 import { useGameStore } from "@/store/gameStore";
+import { Joystick } from "./joystick";
+import { useMouseKeyboardInput } from "@/hooks/useMouseKeyboardInput";
+import { Entity } from "@pixi-tanks/game-core";
 
 export function GameCanvas() {
   const canvasRef = useRef<HTMLDivElement>(null);
-  const appRef = useRef<Application | null>(null);
-  const gameRef = useRef<GameWorld | null>(null);
-  const keys = useKeyboardControls();
-  const mouse = useMouseControls();
+  const appRef = useRef<Application>(null);
+  const gameRef = useRef<GameWorld>(null);
+  const viewportRef = useRef<Viewport>(null);
+  const tankRef = useRef<Entity>(null);
+
+  useMouseKeyboardInput(tankRef.current, viewportRef.current);
 
   const { playerPos } = useGameStore();
 
@@ -40,17 +43,19 @@ export function GameCanvas() {
           worldHeight: 2000,
           events: app.renderer.events,
         });
+        viewportRef.current = viewport;
         canvasRef.current?.appendChild(app.canvas);
 
         app.stage.addChild(viewport);
 
         const game = new GameWorld(viewport, 5000, 5000);
         game.init();
+        tankRef.current = game.getPlayerTank() ?? null;
         gameRef.current = game;
 
         // ✅ Main game loop
         app.ticker.add(({ deltaMS }) => {
-          game.update(deltaMS, keys, mouse);
+          game.update(deltaMS);
         });
       });
 
@@ -70,6 +75,20 @@ export function GameCanvas() {
       <MiniMap
         worldSize={{ width: 5000, height: 5000 }}
         playerPos={playerPos}
+      />
+      <Joystick
+        position={{
+          bottom: "50px",
+          left: "50px",
+        }}
+        onMove={(dir) => console.log(dir)}
+      />
+      <Joystick
+        position={{
+          bottom: "50px",
+          right: "50px",
+        }}
+        onMove={(dir) => console.log(dir)}
       />
     </div>
   );

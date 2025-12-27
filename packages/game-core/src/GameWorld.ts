@@ -19,7 +19,6 @@ import { createWanderingShape } from "./factories/WanderingShapeFactory";
 import { spawnNest } from "./utils/spawnNest";
 import { WanderingSystem } from "./systems/WanderingSystem";
 
-// game/GameWorld.ts
 export class GameWorld {
   private entityManager = new EntityManager();
   private systems: System[] = [];
@@ -100,11 +99,7 @@ export class GameWorld {
     const nest = spawnNest(this.entityManager, 2500, 2500, 8);
   }
 
-  update(
-    delta: number,
-    keys: Set<string>,
-    mouse: Map<"x" | "y" | "mousedown", unknown>
-  ) {
+  update(delta: number) {
     Engine.update(engine, delta);
     for (const system of this.systems) {
       system.update(this.entityManager);
@@ -114,9 +109,8 @@ export class GameWorld {
 
     if (tank) {
       const physicsBody = tank.getComponent("PhysicsBody");
-      const input = tank.getComponent("Input");
 
-      if (!physicsBody || !input) return;
+      if (!physicsBody) return;
 
       gameEvents.emit("playerPos", {
         x: physicsBody.body.position.x,
@@ -127,23 +121,14 @@ export class GameWorld {
         physicsBody.body.position.x,
         physicsBody.body.position.y
       );
-      if (input) {
-        input.direction = { x: 0, y: 0 };
-        input.fire = false;
-        if (keys.has("w") || keys.has("arrowup")) input.direction.y = -1;
-        if (keys.has("s") || keys.has("arrowdown")) input.direction.y = 1;
-        if (keys.has("a") || keys.has("arrowleft")) input.direction.x = -1;
-        if (keys.has("d") || keys.has("arrowright")) input.direction.x = 1;
-
-        input.fire = keys.has(" ") || (mouse.get("mousedown") as boolean);
-
-        input.mousePosition.x = (mouse.get("x") || 0) as number;
-        input.mousePosition.y = (mouse.get("y") || 0) as number;
-      }
     }
   }
 
   getEntityManager() {
     return this.entityManager;
+  }
+
+  getPlayerTank() {
+    return this.entityManager.getEntity("player");
   }
 }

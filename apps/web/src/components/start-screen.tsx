@@ -17,7 +17,7 @@ export const StartScreen = () => {
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-50"
+      className="fixed inset-0 flex items-center justify-center z-40"
       style={{
         backgroundImage: `url(/bg-img-2.webp)`,
         backgroundSize: "cover",

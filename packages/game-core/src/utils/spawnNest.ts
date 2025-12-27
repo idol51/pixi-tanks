@@ -20,7 +20,5 @@ export function spawnNest(
     shapes.push(shape);
   }
 
-  createWanderingShape(em, "hexagon", x, y);
-
   return shapes;
 }

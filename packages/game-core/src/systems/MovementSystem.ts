@@ -13,8 +13,9 @@ export class MovementSystem extends System {
 
       if (!input || !physicsBody) continue;
 
-      const { x, y } = input.direction;
       const forceMagnitude = 0.0008;
+      const x = input.moveX;
+      const y = input.moveY;
 
       const magnitude = Math.sqrt(x ** 2 + y ** 2);
       if (magnitude > 0) {
