@@ -8,11 +8,11 @@ export class TurretAimingSystem implements System {
   constructor(private viewport: Viewport) {
     const crosshair = new Graphics();
     crosshair
-      .moveTo(-5, -5)
-      .lineTo(5, 5)
-      .moveTo(5, -5)
-      .lineTo(-5, 5)
-      .stroke({ width: 2, color: "red" });
+      .moveTo(-6, -6)
+      .lineTo(6, 6)
+      .moveTo(6, -6)
+      .lineTo(-6, 6)
+      .stroke({ width: 3, color: "white" });
     crosshair.zIndex = 1000;
     this.crosshair = crosshair;
     this.viewport.addChild(crosshair);

@@ -1,12 +1,16 @@
+import { InputState } from "@pixi-tanks/game-core";
 import { Entity } from "@pixi-tanks/game-core/src/ecs/Entity";
-import { RefObject, useEffect } from "react";
+import { Viewport } from "pixi-viewport";
+import { useEffect } from "react";
 
 export function useJoystickInput(
-  tankEntity: Entity,
-  joystickRef: RefObject<{ x: number; y: number }>,
-  aimRef: RefObject<{ x: number; y: number }>
+  tankEntity: Entity | null,
+  viewport: Viewport | null,
+  joystickRef: { x: number; y: number },
+  aimRef: { x: number; y: number }
 ) {
   useEffect(() => {
+    if (!tankEntity) return;
     const input = tankEntity.getComponent("Input");
     if (!input) return;
 
@@ -14,16 +18,23 @@ export function useJoystickInput(
     // Update pointerPosition from aimRef.position
     // Update isShooting from fireButton
 
-    const loop = () => {
-      input.moveX = joystickRef.current.x;
-      input.moveY = joystickRef.current.y;
-      input.pointerPosition = {
-        x: aimRef.current.x,
-        y: aimRef.current.y,
-      };
-      input.isShooting = aimRef.current.x !== 0 || aimRef.current.y !== 0;
-      requestAnimationFrame(loop);
+    const initialInput: InputState = {
+      moveY: 0,
+      moveX: 0,
+      isShooting: false,
+      pointerPosition: input.pointerPosition,
     };
-    requestAnimationFrame(loop);
-  }, []);
+    initialInput.moveX = joystickRef.x;
+    initialInput.moveY = -joystickRef.y;
+    console.log(aimRef, viewport);
+
+    initialInput.pointerPosition.x =
+      (window.innerWidth / 2 || 0) * (1 + aimRef.x);
+    initialInput.pointerPosition.y =
+      (1 - aimRef.y) * (window.innerHeight / 2 || 0);
+
+    initialInput.isShooting = aimRef.x !== 0 || aimRef.y !== 0;
+
+    input.updateInput(initialInput);
+  }, [joystickRef, aimRef]);
 }

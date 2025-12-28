@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Application } from "pixi.js";
+import { Application, isMobile } from "pixi.js";
 import { GameWorld } from "@pixi-tanks/game-core";
 import { Button } from "@/components/ui/button";
 import { Viewport } from "pixi-viewport";
@@ -10,6 +10,7 @@ import { useGameStore } from "@/store/gameStore";
 import { Joystick } from "./joystick";
 import { useMouseKeyboardInput } from "@/hooks/useMouseKeyboardInput";
 import { Entity } from "@pixi-tanks/game-core";
+import { useJoystickInput } from "@/hooks/useJoystickInput";
 
 export function GameCanvas() {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -18,7 +19,16 @@ export function GameCanvas() {
   const viewportRef = useRef<Viewport>(null);
   const tankRef = useRef<Entity>(null);
 
+  const movementJoystickRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const aimJoystickRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
   useMouseKeyboardInput(tankRef.current, viewportRef.current);
+  useJoystickInput(
+    tankRef.current,
+    viewportRef.current,
+    movementJoystickRef.current,
+    aimJoystickRef.current
+  );
 
   const { playerPos } = useGameStore();
 
@@ -76,20 +86,24 @@ export function GameCanvas() {
         worldSize={{ width: 5000, height: 5000 }}
         playerPos={playerPos}
       />
-      <Joystick
-        position={{
-          bottom: "50px",
-          left: "50px",
-        }}
-        onMove={(dir) => console.log(dir)}
-      />
-      <Joystick
-        position={{
-          bottom: "50px",
-          right: "50px",
-        }}
-        onMove={(dir) => console.log(dir)}
-      />
+      {isMobile.any && (
+        <>
+          <Joystick
+            position={{
+              bottom: "50px",
+              left: "50px",
+            }}
+            onMove={(dir) => (movementJoystickRef.current = dir)}
+          />
+          <Joystick
+            position={{
+              bottom: "50px",
+              right: "50px",
+            }}
+            onMove={(dir) => (aimJoystickRef.current = dir)}
+          />
+        </>
+      )}
     </div>
   );
 }

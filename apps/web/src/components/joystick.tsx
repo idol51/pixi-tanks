@@ -21,8 +21,7 @@ export function Joystick({
     });
 
     joystick.on("move", (_, data) => {
-      const rad = data.angle.radian ?? 0;
-      onMove({ x: Math.cos(rad), y: Math.sin(rad) });
+      onMove(data.vector);
     });
 
     joystick.on("end", () => {
@@ -30,13 +29,13 @@ export function Joystick({
     });
 
     return () => joystick.destroy();
-  }, [onMove]);
+  }, []);
 
   return (
     <div
       ref={divRef}
       style={{ ...position }}
-      className="absolute z-50 w-32 h-32"
+      className="absolute z-[60] w-32 h-32"
     />
   );
 }

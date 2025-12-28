@@ -1,5 +1,6 @@
 import { Entity, InputState } from "@pixi-tanks/game-core";
 import { Viewport } from "pixi-viewport";
+import { isMobile } from "pixi.js";
 import { useEffect, useState } from "react";
 
 export function useMouseKeyboardInput(
@@ -14,6 +15,7 @@ export function useMouseKeyboardInput(
   });
 
   useEffect(() => {
+    if (isMobile.any) return;
     const input = tankEntity?.getComponent("Input");
     if (!input) return;
     const initialInput: InputState = {
@@ -35,6 +37,8 @@ export function useMouseKeyboardInput(
   }, [keys, mouseInput]);
 
   useEffect(() => {
+    if (isMobile.any) return;
+
     const keyDown = (e: KeyboardEvent) => {
       setKeys((prev) => {
         const newSet = new Set(prev);
