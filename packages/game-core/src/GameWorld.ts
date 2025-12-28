@@ -59,7 +59,7 @@ export class GameWorld {
     tank.addComponent("Input", new InputComponent());
 
     // ✅ Spawn enemies
-    for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < 0; i++) {
       const x = Math.random() * 800;
       const y = Math.random() * 600;
       spawnTank({
@@ -78,7 +78,7 @@ export class GameWorld {
     }
 
     for (let i = 0; i < 10; i++) {
-      const shape = createWanderingShape(
+      createWanderingShape(
         this.entityManager,
         "triangle",
         Math.random() * 200,
@@ -87,7 +87,7 @@ export class GameWorld {
     }
 
     for (let i = 0; i < 10; i++) {
-      const shape = createWanderingShape(
+      createWanderingShape(
         this.entityManager,
         "square",
         Math.random() * 200,
@@ -96,7 +96,7 @@ export class GameWorld {
     }
 
     // Nest in center
-    const nest = spawnNest(this.entityManager, 2500, 2500, 8);
+    spawnNest(this.entityManager, 2500, 2500, 8);
   }
 
   update(delta: number) {

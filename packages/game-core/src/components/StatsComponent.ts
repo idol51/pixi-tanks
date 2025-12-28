@@ -13,30 +13,30 @@ export class StatsComponent implements Component {
   ]);
   private stats = new Map<keyof BaseTankStats, number>();
   constructor(stats: BaseTankStats) {
-    for (const stat in stats) {
-      this.stats.set(stat as keyof BaseTankStats, stats[stat]);
+    for (const [key, value] of Object.entries(stats)) {
+      this.stats.set(key as keyof BaseTankStats, value);
     }
   }
 
   getStats(): BaseTankStats {
     return {
       maxHealth:
-        this.stats.get("maxHealth") * (this.multipliers.get("maxHealth") ?? 1),
+        this.stats.get("maxHealth")! * (this.multipliers.get("maxHealth") ?? 1),
       healthRegen:
-        this.stats.get("healthRegen") *
+        this.stats.get("healthRegen")! *
         (this.multipliers.get("healthRegen") ?? 1),
-      speed: this.stats.get("speed") * (this.multipliers.get("speed") ?? 1),
-      reload: this.stats.get("reload") / (this.multipliers.get("reload") ?? 1), // ↓ reload time = ↑ fire rate
+      speed: this.stats.get("speed")! * (this.multipliers.get("speed") ?? 1),
+      reload: this.stats.get("reload")! / (this.multipliers.get("reload") ?? 1), // ↓ reload time = ↑ fire rate
       bulletDamage:
-        this.stats.get("bulletDamage") *
+        this.stats.get("bulletDamage")! *
         (this.multipliers.get("bulletDamage") ?? 1),
       bulletPenetration:
-        this.stats.get("bulletPenetration") *
+        this.stats.get("bulletPenetration")! *
         (this.multipliers.get("bulletPenetration") ?? 1),
       bulletSpeed:
-        this.stats.get("bulletSpeed") *
+        this.stats.get("bulletSpeed")! *
         (this.multipliers.get("bulletSpeed") ?? 1),
-      color: this.stats.get("color"),
+      color: this.stats.get("color")!,
     };
   }
 
