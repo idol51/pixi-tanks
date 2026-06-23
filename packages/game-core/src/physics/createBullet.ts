@@ -1,5 +1,6 @@
 import { Bodies, Body, World } from "matter-js";
 import { world } from "./engine";
+import { CollisionCategories } from "../components/CollisionComponent";
 
 export function createBullet({
   x,
@@ -19,6 +20,13 @@ export function createBullet({
     isSensor: true,
     label: "bullet",
     frictionAir: 0,
+    collisionFilter: {
+      category: CollisionCategories.BULLET,
+      mask:
+        CollisionCategories.TANK |
+        CollisionCategories.WANDERING |
+        CollisionCategories.WALL,
+    },
   });
 
   World.add(world, body);

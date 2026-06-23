@@ -1,0 +1,202 @@
+import {
+  UpgradeableStat,
+  UPGRADEABLE_STATS,
+  MAX_STAT_POINTS,
+} from "@pixi-tanks/game-core";
+import { HudState } from "@/store/gameStore";
+import { useEffect } from "react";
+import { isMobile } from "pixi.js";
+import { useGameStore } from "@/store/gameStore";
+
+const STAT_LABELS: Record<UpgradeableStat, string> = {
+  maxHealth: "Health",
+  healthRegen: "Regen",
+  speed: "Speed",
+  reload: "Reload",
+  bulletDamage: "Damage",
+  bulletPenetration: "Penetration",
+  bulletSpeed: "Bullet Spd",
+};
+
+const KEY_MAP: Record<string, UpgradeableStat> = {
+  "1": "maxHealth",
+  "2": "healthRegen",
+  "3": "speed",
+  "4": "reload",
+  "5": "bulletDamage",
+  "6": "bulletPenetration",
+  "7": "bulletSpeed",
+};
+
+function SegmentBar({ pct, color }: { pct: number; color: string }) {
+  return (
+    <div className="h-3 w-full bg-black/60 border border-[#00ff00]/30 rounded-sm overflow-hidden p-px">
+      <div
+        className="h-full transition-all duration-200 rounded-sm"
+        style={{
+          width: `${Math.max(0, Math.min(100, pct))}%`,
+          background: `linear-gradient(90deg, ${color}99, ${color})`,
+          boxShadow: `0 0 8px ${color}66`,
+        }}
+      />
+    </div>
+  );
+}
+
+function StatPips({
+  stat,
+  points,
+  unspent,
+  onAdjust,
+}: {
+  stat: UpgradeableStat;
+  points: number;
+  unspent: number;
+  onAdjust: (stat: UpgradeableStat, delta: 1 | -1) => void;
+}) {
+  return (
+    <div className="flex gap-0.5" role="group" aria-label={STAT_LABELS[stat]}>
+      {Array.from({ length: MAX_STAT_POINTS }, (_, i) => {
+        const filled = i < points;
+        const canAdd = !filled && i === points && unspent > 0;
+        const canRemove = filled && i === points - 1;
+        return (
+          <button
+            key={i}
+            type="button"
+            disabled={!canAdd && !canRemove}
+            onClick={() => onAdjust(stat, canRemove ? -1 : 1)}
+            className={[
+              "w-3.5 h-3.5 border transition-all",
+              filled
+                ? "bg-[#00ff00] border-[#00ff00] shadow-[0_0_6px_#00ff0066]"
+                : "bg-black/40 border-[#00ff00]/25",
+              canAdd || canRemove
+                ? "cursor-pointer hover:scale-110 hover:border-[#00ff00]"
+                : "cursor-default opacity-70",
+            ].join(" ")}
+            aria-label={`${STAT_LABELS[stat]} pip ${i + 1}`}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+export function GameHud({
+  hud,
+  onAdjustStat,
+}: {
+  hud: HudState;
+  onAdjustStat: (stat: UpgradeableStat, delta: 1 | -1) => void;
+}) {
+  const reduceMotion = useGameStore((s) => s.settings.reduceMotion);
+  const unspent = hud.unspentStatPoints ?? 0;
+  const healthPct = (hud.health / hud.maxHealth) * 100;
+  const xpPct = (hud.xp / hud.xpToNext) * 100;
+
+  useEffect(() => {
+    if (isMobile.any) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+      const stat = KEY_MAP[e.key];
+      if (!stat) return;
+      e.preventDefault();
+      onAdjustStat(stat, e.shiftKey ? -1 : 1);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onAdjustStat]);
+
+  return (
+    <div
+      className={[
+        "absolute top-4 left-4 z-10 w-56 text-white text-xs select-none",
+        unspent > 0 && !reduceMotion
+          ? "drop-shadow-[0_0_12px_rgba(0,255,0,0.35)]"
+          : "",
+      ].join(" ")}
+      style={{
+        clipPath:
+          "polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%)",
+      }}
+    >
+      <div className="bg-[#0a120a]/90 border border-[#00ff00]/40 p-3 space-y-3 backdrop-blur-sm">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <div className="text-[#00ff00] font-bold text-sm tracking-wide">
+              LVL {hud.level}
+            </div>
+            {hud.className && (
+              <div className="text-[10px] text-[#00ff00]/70 uppercase tracking-widest">
+                {hud.className}
+              </div>
+            )}
+          </div>
+          <div
+            className={[
+              "text-[10px] font-mono px-2 py-0.5 border rounded-sm",
+              unspent > 0
+                ? "border-yellow-400/80 text-yellow-300 bg-yellow-400/10"
+                : "border-white/20 text-white/50",
+            ].join(" ")}
+          >
+            PTS {unspent}
+          </div>
+        </div>
+
+        <div>
+          <div className="flex justify-between text-[10px] text-white/60 mb-1">
+            <span>HP</span>
+            <span>
+              {Math.ceil(hud.health)} / {hud.maxHealth}
+            </span>
+          </div>
+          <SegmentBar pct={healthPct} color="#22cc44" />
+        </div>
+
+        <div>
+          <div className="flex justify-between text-[10px] text-white/60 mb-1">
+            <span>XP</span>
+            <span>
+              {Math.floor(hud.xp)} / {hud.xpToNext}
+            </span>
+          </div>
+          <SegmentBar pct={xpPct} color="#ffcc00" />
+        </div>
+
+        <div className="border-t border-[#00ff00]/20 pt-2 space-y-1.5">
+          {!isMobile.any && (
+            <div className="text-[9px] text-white/40 text-center mb-1">
+              1–7 spend · Shift+1–7 refund
+            </div>
+          )}
+          {UPGRADEABLE_STATS.map((stat, i) => {
+            const points = hud.statAllocations?.[stat] ?? 0;
+            return (
+              <div key={stat} className="flex items-center gap-1.5">
+                <span className="w-14 truncate text-[10px] text-white/80">
+                  {!isMobile.any && (
+                    <span className="text-[#00ff00]/40 mr-0.5">{i + 1}</span>
+                  )}
+                  {STAT_LABELS[stat]}
+                </span>
+                <StatPips
+                  stat={stat}
+                  points={points}
+                  unspent={unspent}
+                  onAdjust={onAdjustStat}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}

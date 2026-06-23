@@ -1,6 +1,9 @@
 import { Component } from "../ecs/Component";
-import { Graphics } from "pixi.js";
+import { Container } from "pixi.js";
 
 export class SpriteComponent implements Component {
-  constructor(public sprite: Graphics) {}
+  attached = false;
+  baseTint = 0xffffff;
+
+  constructor(public sprite: Container) {}
 }

@@ -4,39 +4,64 @@ import { SpriteComponent } from "../components/SpriteComponent";
 import { Graphics } from "pixi.js";
 import { EntityManager } from "../ecs/EntityManager";
 import { createBullet } from "../physics/createBullet";
-import { attachEntityToBody } from "../utils/bodyEntityMap";
 import { CollisionComponent } from "../components/CollisionComponent";
+import { BulletComponent } from "../components/BulletComponent";
+import { BaseTankStats, clampBulletSpeed } from "../data/tank-stats";
+import { Viewport } from "pixi-viewport";
+import { attachSpriteToViewport } from "../utils/attachSprite";
+import { getBulletVisuals } from "../utils/bulletAppearance";
 
 export function spawnBullet(
   em: EntityManager,
+  viewport: Viewport,
   x: number,
   y: number,
   angle: number,
   ownerId: string,
-  teamId?: string
+  teamId?: string,
+  shooterStats?: BaseTankStats
 ) {
   const bulletId = uuid();
   const bullet = em.createEntity("bullet-" + bulletId);
 
-  const speed = 15;
-  const radius = 4;
+  const stats = shooterStats ?? {
+    bulletSpeed: 8,
+    bulletDamage: 10,
+    bulletPenetration: 10,
+    color: 0xffff00,
+    maxHealth: 0,
+    healthRegen: 0,
+    speed: 0,
+    reload: 1,
+  };
+  const speed = clampBulletSpeed(stats.bulletSpeed);
+  const { radius, color } = getBulletVisuals(stats);
+  const damage = stats.bulletDamage;
+  const penetration = stats.bulletPenetration;
 
   const bulletBody = createBullet({ x, y, angle, speed, radius, ownerId });
 
-  attachEntityToBody(bulletBody, bullet);
+  const graphic = new Graphics().circle(0, 0, radius).fill(color);
+  const sprite = new SpriteComponent(graphic);
+  attachSpriteToViewport(viewport, sprite);
 
-  bullet.addComponent("PhysicsBody", new PhysicsBodyComponent(bulletBody));
-  bullet.addComponent(
-    "Sprite",
-    new SpriteComponent(new Graphics().circle(0, 0, radius).fill(0xffff00))
-  );
+  bullet.addComponent("PhysicsBody", new PhysicsBodyComponent(bulletBody, bullet));
+  bullet.addComponent("Sprite", sprite);
   bullet.addComponent(
     "Collision",
     new CollisionComponent({
       group: "bullet",
       ownerId,
       teamId,
-      damage: 10,
+      damage,
+    })
+  );
+  bullet.addComponent(
+    "Bullet",
+    new BulletComponent(x, y, {
+      maxDistance: 750,
+      maxLifetimeMs: 3000,
+      penetration,
     })
   );
 

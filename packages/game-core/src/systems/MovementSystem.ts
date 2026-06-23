@@ -1,7 +1,6 @@
 import { System } from "../ecs/System";
 import { EntityManager } from "../ecs/EntityManager";
-import { Body } from "matter-js";
-import { Entity } from "../ecs/Entity";
+import { applyTankForce, clampTankVelocity } from "../utils/applyTankForce";
 
 export class MovementSystem extends System {
   update(entityManager: EntityManager): void {
@@ -10,29 +9,18 @@ export class MovementSystem extends System {
     for (const entity of entities) {
       const input = entity.getComponent("Input");
       const physicsBody = entity.getComponent("PhysicsBody");
+      const stats = entity.getComponent("Stats");
 
       if (!input || !physicsBody) continue;
 
-      const forceMagnitude = 0.0008;
-      const x = input.moveX;
-      const y = input.moveY;
-
-      const magnitude = Math.sqrt(x ** 2 + y ** 2);
-      if (magnitude > 0) {
-        const normalizedX = x / magnitude;
-        const normalizedY = y / magnitude;
-
-        const force = {
-          x: normalizedX * forceMagnitude,
-          y: normalizedY * forceMagnitude,
-        };
-
-        Body.applyForce(physicsBody.body, physicsBody.body.position, force);
-      }
+      const speedMult = stats?.getStats().speed ?? 1;
+      applyTankForce(
+        physicsBody.body,
+        input.moveX,
+        input.moveY,
+        speedMult
+      );
+      clampTankVelocity(physicsBody.body);
     }
-  }
-
-  test(entity: Entity) {
-    return entity.hasComponent("Input") && entity.hasComponent("PhysicsBody");
   }
 }

@@ -19,21 +19,27 @@ export class TurretAimingSystem implements System {
   }
 
   update(manager: EntityManager) {
-    const entities = manager.queryByComponents("Turret", "Input");
+    const entities = manager.queryByComponents("Turret", "Input", "PhysicsBody");
     for (const e of entities) {
       const turret = e.getComponent("Turret");
       const input = e.getComponent("Input");
+      const physicsBody = e.getComponent("PhysicsBody");
 
-      if (!turret || !input) continue;
+      if (!turret || !input || !physicsBody) continue;
 
       const { pointerPosition } = input;
+      const worldPos = this.viewport.toWorld(
+        pointerPosition.x,
+        pointerPosition.y
+      );
+      const tankPos = physicsBody.body.position;
 
-      const dx = pointerPosition.x - this.viewport.screenWidth / 2;
-      const dy = pointerPosition.y - this.viewport.screenHeight / 2;
+      this.crosshair.position.set(worldPos.x, worldPos.y);
 
-      const { x, y } = this.viewport.corner;
-      this.crosshair.position.set(pointerPosition.x + x, pointerPosition.y + y);
-      const angle = Math.atan2(dy, dx);
+      const angle = Math.atan2(
+        worldPos.y - tankPos.y,
+        worldPos.x - tankPos.x
+      );
       turret.setRotation(angle);
     }
   }

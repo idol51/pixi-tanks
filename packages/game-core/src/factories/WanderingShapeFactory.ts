@@ -2,13 +2,18 @@ import { Entity } from "../ecs/Entity";
 import { v4 as uuid } from "uuid";
 import { Bodies, World } from "matter-js";
 import { CollisionCategories } from "../components/CollisionComponent";
-import { Graphics } from "pixi.js";
 import { PhysicsBodyComponent } from "../components/PhysicsBodyComponent";
 import { SpriteComponent } from "../components/SpriteComponent";
 import { WanderingComponent } from "../components/WanderingComponent";
 import { HealthComponent } from "../components/HealthComponent";
 import { world } from "../physics/engine";
 import { EntityManager } from "../ecs/EntityManager";
+import { CollisionComponent } from "../components/CollisionComponent";
+import { ScoreValueComponent } from "../components/ScoreValueComponent";
+import { DamageFlashComponent } from "../components/DamageFlashComponent";
+import { Viewport } from "pixi-viewport";
+import { attachSpriteToViewport } from "../utils/attachSprite";
+import { createShapeSprite } from "../rendering/loadGameAssets";
 
 export type ShapeType = "triangle" | "square" | "pentagon" | "hexagon";
 
@@ -33,43 +38,67 @@ const size: Record<ShapeType, number> = {
   hexagon: 48,
 };
 
+const shapeStats: Record<
+  ShapeType,
+  { health: number; xp: number; armor: number; bodyDamage: number }
+> = {
+  triangle: { health: 18, xp: 15, armor: 2, bodyDamage: 5 },
+  square: { health: 32, xp: 28, armor: 4, bodyDamage: 8 },
+  pentagon: { health: 63, xp: 55, armor: 8, bodyDamage: 12 },
+  hexagon: { health: 125, xp: 140, armor: 15, bodyDamage: 20 },
+};
+
 export function createWanderingShape(
   em: EntityManager,
   shape: ShapeType,
   x: number,
-  y: number
+  y: number,
+  viewport?: Viewport
 ): Entity {
   const id = uuid();
   const entity = em.createEntity(id);
+  const stats = shapeStats[shape];
 
-  const sprite = new Graphics();
+  const spriteGfx = createShapeSprite(shape);
+  spriteGfx.zIndex = 500;
 
-  const angleStep = (Math.PI * 2) / sides[shape];
-  sprite.moveTo(size[shape], 0);
-  for (let i = 1; i <= sides[shape]; i++) {
-    sprite.lineTo(
-      Math.cos(i * angleStep) * size[shape],
-      Math.sin(i * angleStep) * size[shape]
-    );
-  }
-  sprite.fill(colorMap[shape]);
+  const sprite = new SpriteComponent(spriteGfx);
+  sprite.baseTint = colorMap[shape];
+  if (viewport) attachSpriteToViewport(viewport, sprite);
 
   const body = Bodies.polygon(x, y, sides[shape], size[shape], {
     restitution: 0.9,
     frictionAir: 0.05,
     collisionFilter: {
       category: CollisionCategories.WANDERING,
-      mask: CollisionCategories.TANK | CollisionCategories.BULLET,
+      mask:
+        CollisionCategories.TANK |
+        CollisionCategories.BULLET |
+        CollisionCategories.WALL,
     },
   });
 
   World.add(world, body);
 
-  entity.addComponent("PhysicsBody", new PhysicsBodyComponent(body));
-  entity.addComponent("Sprite", new SpriteComponent(sprite));
+  entity.addComponent("PhysicsBody", new PhysicsBodyComponent(body, entity));
+  entity.addComponent("Sprite", sprite);
   entity.addComponent("Wandering", new WanderingComponent());
-  entity.addComponent("Health", new HealthComponent(20)); // optional
-  //  entity.addComponent(new ScoreValueComponent(10));
+  entity.addComponent("Health", new HealthComponent(stats.health));
+  entity.addComponent("DamageFlash", new DamageFlashComponent());
+  entity.addComponent(
+    "ScoreValue",
+    new ScoreValueComponent(stats.xp, stats.xp)
+  );
+  entity.addComponent(
+    "Collision",
+    new CollisionComponent({
+      group: "shape",
+      armor: stats.armor,
+      bodyDamage: stats.bodyDamage,
+    })
+  );
 
   return entity;
 }
+
+export { shapeStats, size as shapeSize };
