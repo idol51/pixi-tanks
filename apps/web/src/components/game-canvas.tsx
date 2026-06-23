@@ -1,30 +1,113 @@
-import { useEffect, useRef } from "react";
-import { Application } from "pixi.js";
-import { GameWorld } from "@pixi-tanks/game-core";
-import { useKeyboardControls } from "../hooks/useKeyboardControls";
-import { useMouseAngle } from "../hooks/useMouseAngle";
-import { Button } from "@/components/ui/button";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { Application, isMobile } from "pixi.js";
+import {
+  Entity,
+  GameWorld,
+  TankClassId,
+  UpgradeableStat,
+  WORLD_HEIGHT,
+  WORLD_WIDTH,
+  gameEvents,
+} from "@pixi-tanks/game-core";
 import { Viewport } from "pixi-viewport";
-import { useGameEvents } from "../hooks/useGameEvents";
 import { Leaderboard } from "./leader-board";
+import { MiniMap } from "./mini-map";
 import { useGameStore } from "@/store/gameStore";
+import { Joystick } from "./joystick";
+import {
+  applyKeyboardMouseInput,
+  applyMobileInput,
+  createInputListeners,
+} from "@/hooks/useInputBridge";
+import { loadGameAssets } from "@pixi-tanks/game-core";
+import { GameHud } from "./game-hud";
+import { KillFeed } from "./kill-feed";
+import { ClassEvolutionBar } from "./class-evolution-bar";
+import { WaveBanner } from "./wave-banner";
+import { RespawnScreen } from "./respawn-screen";
+import { FloatingTextLayer } from "./floating-text";
+
+type GameSession = {
+  game: GameWorld;
+  viewport: Viewport;
+  tank: Entity;
+};
 
 export function GameCanvas() {
   const canvasRef = useRef<HTMLDivElement>(null);
-  const appRef = useRef<Application | null>(null);
-  const tankIdRef = useRef<string>("player-1");
-  const gameRef = useRef<GameWorld | null>(null);
-  const keysRef = useKeyboardControls();
-  const angle = useMouseAngle(canvasRef);
+  const sessionRef = useRef<GameSession | null>(null);
+  const wasAliveRef = useRef(true);
 
-  const { playerName } = useGameStore();
+  const movementJoystickRef = useRef({ x: 0, y: 0 });
+  const aimJoystickRef = useRef({ x: 0, y: 0 });
+  const keysRef = useRef(new Set<string>());
+  const mouseRef = useRef({ x: window.innerWidth / 2, y: window.innerHeight / 2, mouseDown: false });
 
-  useGameEvents();
+  const {
+    playerPos,
+    playerName,
+    gameMode,
+    hud,
+    isAlive,
+    classEvolution,
+    killFeed,
+    setClassEvolution,
+  } = useGameStore();
 
-  // Handle Game Init
+  const [minimapData, setMinimapData] = useState<{
+    player: { x: number; y: number };
+    bots: { x: number; y: number; teamId?: string }[];
+    shapes?: { x: number; y: number }[];
+    viewport?: { x: number; y: number; width: number; height: number };
+  }>({ player: { x: 0, y: 0 }, bots: [] });
+
+  useEffect(() => {
+    const handler = (data: {
+      player: { x: number; y: number };
+      bots: { x: number; y: number; teamId?: string }[];
+      shapes?: { x: number; y: number }[];
+      viewport: { x: number; y: number; width: number; height: number };
+    }) => {
+      setMinimapData({
+        player: data.player,
+        bots: data.bots,
+        shapes: data.shapes,
+        viewport: data.viewport,
+      });
+    };
+    gameEvents.on("minimapUpdate", handler);
+    return () => gameEvents.off("minimapUpdate", handler);
+  }, []);
+
+  useEffect(() => {
+    const shakeHandler = () => {
+      const { settings } = useGameStore.getState();
+      if (settings.reduceMotion) return;
+      const s = sessionRef.current;
+      if (!s) return;
+      const baseX = s.viewport.center.x;
+      const baseY = s.viewport.center.y;
+      let frame = 0;
+      const shake = () => {
+        if (frame++ > 8) {
+          s.viewport.moveCenter(baseX, baseY);
+          return;
+        }
+        s.viewport.moveCenter(
+          baseX + (Math.random() - 0.5) * 12,
+          baseY + (Math.random() - 0.5) * 12
+        );
+        requestAnimationFrame(shake);
+      };
+      shake();
+    };
+    gameEvents.on("playerHit", shakeHandler);
+    return () => gameEvents.off("playerHit", shakeHandler);
+  }, []);
+
   useEffect(() => {
     const app = new Application();
-    appRef.current = app;
+    let cleanupInput: (() => void) | undefined;
 
     app
       .init({
@@ -32,77 +115,128 @@ export function GameCanvas() {
         backgroundColor: 0x1e1e1e,
         antialias: true,
       })
-      .then(() => {
+      .then(async () => {
         const viewport = new Viewport({
           screenWidth: window.innerWidth,
           screenHeight: window.innerHeight,
-          worldWidth: 2000,
-          worldHeight: 2000,
+          worldWidth: WORLD_WIDTH,
+          worldHeight: WORLD_HEIGHT,
           events: app.renderer.events,
         });
+
         canvasRef.current?.appendChild(app.canvas);
+        app.stage.addChild(viewport);
 
-        const game = new GameWorld(app, viewport, "player");
-        gameRef.current = game;
+        await loadGameAssets(app.renderer);
 
-        // ✅ Spawn player tank ONCE
-        game.spawnTank("player", playerName);
-        tankIdRef.current = "player";
+        const game = new GameWorld(viewport, gameMode, playerName);
+        game.init();
+        const tank = game.getPlayerTank();
+        if (!tank) return;
 
-        // ✅ Main game loop
-        app.ticker.add(() => {
-          const delta = app.ticker.deltaTime;
-          const tank = game.tanks.get(tankIdRef.current);
-          if (tank) {
-            const keys = keysRef.current;
-            const speed = 2;
-            let dx = 0,
-              dy = 0;
-            if (keys.has("w") || keys.has("arrowup")) dy -= speed;
-            if (keys.has("s") || keys.has("arrowdown")) dy += speed;
-            if (keys.has("a") || keys.has("arrowleft")) dx -= speed;
-            if (keys.has("d") || keys.has("arrowright")) dx += speed;
+        sessionRef.current = { game, viewport, tank };
 
-            tank.move({ x: dx, y: dy });
-            if (angle) tank.rotate(angle); // angle is fine as a state, not used in logic branches
+        cleanupInput = createInputListeners(
+          viewport,
+          (keys) => {
+            keysRef.current = keys;
+          },
+          (mouse) => {
+            mouseRef.current = { ...mouseRef.current, ...mouse };
+          }
+        );
+
+        app.ticker.add(({ deltaMS }) => {
+          const s = sessionRef.current;
+          if (!s) return;
+
+          const { settings: liveSettings } = useGameStore.getState();
+
+          if (isMobile.any) {
+            applyMobileInput(
+              s.tank,
+              movementJoystickRef.current,
+              aimJoystickRef.current,
+              liveSettings.autoFire
+            );
+          } else {
+            applyKeyboardMouseInput(
+              s.tank,
+              keysRef.current,
+              mouseRef.current,
+              liveSettings.autoFire
+            );
           }
 
-          game.update(delta);
+          s.game.update(deltaMS);
         });
       });
 
     return () => {
+      cleanupInput?.();
+      sessionRef.current?.game.destroy();
       app.destroy(true, { children: true });
+      sessionRef.current = null;
     };
-  }, []);
+  }, [gameMode, playerName]);
 
   useEffect(() => {
-    const handleClick = () => {
-      gameRef.current?.fireBullet(tankIdRef.current);
-    };
+    if (isAlive && !wasAliveRef.current && sessionRef.current) {
+      const tank = sessionRef.current.game.respawnPlayer();
+      if (tank) {
+        sessionRef.current.tank = tank;
+      }
+    }
+    wasAliveRef.current = isAlive;
+  }, [isAlive]);
 
-    window.addEventListener("mousedown", handleClick);
-    return () => window.removeEventListener("mousedown", handleClick);
+  const handleAdjustStat = useCallback((stat: UpgradeableStat, delta: 1 | -1) => {
+    sessionRef.current?.game.adjustPlayerStat(stat, delta);
   }, []);
 
-  useEffect(() => {
-    const tank = gameRef.current?.tanks.get(tankIdRef.current);
-    if (!tank || !angle) return;
-
-    tank.aimTurret(angle);
-  }, [angle]);
+  const handleClassEvolution = useCallback((classId: TankClassId) => {
+    sessionRef.current?.game.applyPlayerClassEvolution(classId);
+    setClassEvolution(null);
+  }, [setClassEvolution]);
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
       <Leaderboard />
+      {isAlive && <GameHud hud={hud} onAdjustStat={handleAdjustStat} />}
+      {classEvolution && (
+        <ClassEvolutionBar
+          level={classEvolution.level}
+          choices={classEvolution.choices}
+          onPick={handleClassEvolution}
+        />
+      )}
+      {gameMode === "survival" && <WaveBanner />}
+      <KillFeed messages={killFeed} />
+      <FloatingTextLayer playerPos={playerPos} />
       <div ref={canvasRef} className="w-full h-full" />
-      <div className="absolute top-4 left-4 space-y-2 z-10">
-        <Button variant="default">Respawn</Button>
-        <div className="text-white">Health: 100</div>
-        <div className="text-white">
-          Score: {gameRef.current?.getPlayerScore()}
-        </div>
-      </div>
+      <MiniMap
+        playerPos={minimapData.player}
+        bots={minimapData.bots}
+        shapes={minimapData.shapes}
+        viewport={minimapData.viewport}
+      />
+      {!isAlive && <RespawnScreen />}
+      {isMobile.any && (
+        <>
+          <Joystick
+            position={{ bottom: "50px", left: "50px" }}
+            onMove={(dir) => {
+              movementJoystickRef.current = dir;
+            }}
+          />
+          <Joystick
+            position={{ bottom: "50px", right: "50px" }}
+            onMove={(dir) => {
+              aimJoystickRef.current = dir;
+            }}
+          />
+        </>
+      )}
     </div>
   );
 }

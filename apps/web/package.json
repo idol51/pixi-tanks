@@ -4,19 +4,22 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --clearScreen false",
+    "dev": "vite --clearScreen false --host",
     "build": "tsc && vite build",
+    "generate-assets": "node scripts/generate-placeholders.mjs",
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.ts\""
   },
   "dependencies": {
     "@pixi-tanks/game-core": "*",
+    "@pixi/display": "^7.4.3",
     "@pixi/react": "^8.0.2",
-    "@radix-ui/react-slot": "^1.2.3",
     "@tailwindcss/vite": "^4.1.9",
-    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "framer-motion": "^12.40.0",
     "lucide-react": "^0.514.0",
+    "matter-js": "^0.20.0",
+    "nipplejs": "^0.10.2",
     "pixi-viewport": "^6.0.3",
     "pixi.js": "^8.10.1",
     "react": "^18.2.0",
@@ -29,6 +32,7 @@
   "devDependencies": {
     "@pixi-tanks/eslint-config": "*",
     "@pixi-tanks/typescript-config": "*",
+    "@types/matter-js": "^0.19.8",
     "@types/node": "^24.0.1",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.2",

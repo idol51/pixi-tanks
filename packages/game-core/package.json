@@ -4,7 +4,15 @@
   "main": "src/index.ts",
   "types": "src/index.js",
   "license": "MIT",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
   "dependencies": {
     "mitt": "^3.0.1"
+  },
+  "devDependencies": {
+    "@pixi-tanks/typescript-config": "*",
+    "vitest": "^3.2.4"
   }
 }

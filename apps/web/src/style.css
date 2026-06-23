@@ -43,24 +43,31 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --game-bg: #0a120a;
+  --game-panel: #0d1a0d;
+  --game-accent: #00ff00;
+  --game-accent-dim: #00ff0040;
+  --game-gold: #ffcc00;
+  --game-danger: #ff4444;
+  --font-display: "Rajdhani", system-ui, sans-serif;
+  --background: #0a120a;
+  --foreground: #e8ffe8;
+  --card: #0d1a0d;
+  --card-foreground: #e8ffe8;
+  --popover: #0d1a0d;
+  --popover-foreground: #e8ffe8;
+  --primary: #00cc00;
+  --primary-foreground: #0a120a;
+  --secondary: #1a2e1a;
+  --secondary-foreground: #e8ffe8;
+  --muted: #1a2e1a;
+  --muted-foreground: #88aa88;
+  --accent: #1a3a1a;
+  --accent-foreground: #00ff00;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: #00ff0033;
+  --input: #00ff0020;
+  --ring: #00ff0066;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -116,5 +123,33 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .game-panel {
+    background: color-mix(in srgb, var(--game-panel) 92%, transparent);
+    border: 1px solid var(--game-accent-dim);
+    backdrop-filter: blur(8px);
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% calc(100% - 12px),
+      calc(100% - 12px) 100%,
+      0 100%
+    );
+  }
+
+  .game-glow {
+    box-shadow: 0 0 20px var(--game-accent-dim);
+  }
+
+  .game-text-glow {
+    text-shadow: 0 0 12px var(--game-accent-dim);
+  }
+
+  .font-display {
+    font-family: var(--font-display);
   }
 }

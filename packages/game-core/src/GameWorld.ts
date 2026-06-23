@@ -1,140 +1,307 @@
-import { Application } from "pixi.js";
+import { InputComponent } from "./components/InputComponent";
+import { EntityManager } from "./ecs/EntityManager";
+import { System } from "./ecs/System";
+import { spawnTank } from "./factories/TankFactory";
+import { MovementSystem } from "./systems/MovementSystem";
+import { RenderSystem } from "./systems/RenderSystem";
 import { Viewport } from "pixi-viewport";
-import { BaseTank } from "./entities/Tank/base-tank";
-import { Grid } from "./entities/Grid";
-import { v4 as uuid } from "uuid";
+import { Engine } from "matter-js";
+import { engine } from "./physics/engine";
+import { TurretAimingSystem } from "./systems/TurretAimSystem";
+import { ShootingSystem } from "./systems/ShootingSystem";
+import { HealthSystem } from "./systems/HealthSystem";
+import { HealthBarSystem } from "./systems/HealthBarSystem";
+import { CollisionSystem } from "./systems/CollisionSystem";
+import { AISystem } from "./systems/AISystem";
+import { createWorld } from "./physics/createWorld";
 import { gameEvents } from "./GameEvents";
-import { ITank } from "./entities/Tank/ITank";
-import { Bullet } from "./entities/Bullet/Bullet";
-import { TankFactory, TankVariant } from "./factories/TankFactory";
-import { EnemySpawner } from "./systems/EnemySpawner";
+import { WanderingSystem } from "./systems/WanderingSystem";
+import { BulletLifetimeSystem } from "./systems/BulletLifetimeSystem";
+import {
+  WORLD_WIDTH,
+  WORLD_HEIGHT,
+  NEST_CENTER,
+  NEST_PULSE_INTERVAL_MS,
+  NEST_PULSE_COUNT,
+} from "./data/world";
+import { pickSpawnPoint } from "./utils/pickSpawnPoint";
+import { GameMode, GameModeId } from "./modes/GameMode";
+import { ffaMode } from "./modes/ffa";
+import { survivalMode } from "./modes/survival";
+import { teamMode } from "./modes/team";
+import { spawnNest } from "./utils/spawnNest";
+import { spawnObstacles } from "./utils/arenaSpawner";
+import { emitHudUpdate, emitScoreboard } from "./utils/scoring";
+import { applyStatSideEffects } from "./utils/statAllocation";
+import { ParticleSystem } from "./systems/ParticleSystem";
+import type { UpgradeableStat } from "./data/stat-allocation";
+import type { TankClassId } from "./data/tank-classes";
+import { applyClassEvolution } from "./utils/classEvolution";
+
+const MODES: Record<GameModeId, GameMode> = {
+  ffa: ffaMode,
+  survival: survivalMode,
+  team: teamMode,
+};
 
 export class GameWorld {
-  app: Application;
-  viewport: Viewport;
-  tanks: Map<string, BaseTank> = new Map();
-  bullets: Map<string, Bullet> = new Map();
-  playerId: string;
-  private enemySpawner: EnemySpawner;
+  private entityManager = new EntityManager();
+  private systems: System[] = [];
+  private collisionSystem: CollisionSystem;
+  private particleSystem: ParticleSystem;
+  private mode: GameMode;
+  private playerDeadEmitted = false;
+  private nestPulseTimer = 0;
+  private hudTick = 0;
+  private minimapTick = 0;
 
-  constructor(app: Application, viewport: Viewport, playerId: string) {
-    this.app = app;
-    this.playerId = playerId;
-    this.viewport = viewport;
-
-    const grid = new Grid(2000, 2000, 50, 0x444444);
-    viewport.addChild(grid);
-
+  constructor(
+    private viewport: Viewport,
+    modeId: GameModeId = "ffa",
+    private playerName = "Player"
+  ) {
+    this.mode = MODES[modeId] ?? ffaMode;
     viewport.drag().decelerate();
-
-    app.stage.addChild(viewport);
-    this.enemySpawner = new EnemySpawner(this);
-  }
-
-  spawnTank(id: string, name: string) {
-    const tank = TankFactory.createTank(
-      TankVariant.MISSILE_LAUNCHER,
-      name,
-      id,
-      0x0000ff
+    createWorld(viewport, WORLD_WIDTH, WORLD_HEIGHT);
+    spawnObstacles(this.entityManager, viewport);
+    spawnNest(
+      this.entityManager,
+      viewport,
+      NEST_CENTER.x,
+      NEST_CENTER.y,
+      8
     );
-    tank.position.set(this.app.screen.width / 2, this.app.screen.height / 2);
-    this.viewport.addChild(tank);
-    this.tanks.set(id, tank);
+
+    this.collisionSystem = new CollisionSystem(this.entityManager);
+    this.particleSystem = new ParticleSystem(this.viewport);
+
+    this.systems.push(
+      new MovementSystem(),
+      new HealthSystem(this.viewport),
+      new HealthBarSystem(),
+      new RenderSystem(this.viewport),
+      new TurretAimingSystem(this.viewport),
+      new ShootingSystem(this.viewport),
+      this.collisionSystem,
+      new AISystem(this.viewport),
+      new WanderingSystem(),
+      new BulletLifetimeSystem(),
+      this.particleSystem
+    );
   }
 
-  fireBullet(tankId: string) {
-    const tank = this.tanks.get(tankId);
-    if (!tank || !tank.isAlive()) return;
+  destroy() {
+    this.collisionSystem.destroy();
+    this.particleSystem.destroy();
+  }
 
-    const bullets = tank.turret.fire(tank);
-    if (!bullets) return;
+  init() {
+    this.mode.onInit(this);
+    emitScoreboard(this.entityManager);
+  }
 
-    for (const bullet of bullets) {
-      const bulletId = uuid();
-      this.bullets.set(bulletId, bullet);
-      this.viewport.addChild(bullet);
+  spawnPlayer(teamId = "player", name?: string) {
+    const existing = this.entityManager.getEntity("player");
+    if (existing) return existing;
+
+    const { x, y } = pickSpawnPoint(this.entityManager, "playerStart", {
+      minDist: 80,
+    });
+    const tank = spawnTank({
+      id: "player",
+      em: this.entityManager,
+      viewport: this.viewport,
+      x,
+      y,
+      teamId,
+      displayName: name ?? this.playerName,
+      statsKey: "DEFAULT",
+      options: { color: 0x00ff00 },
+    });
+    tank.addComponent("Input", new InputComponent());
+    this.playerDeadEmitted = false;
+    return tank;
+  }
+
+  respawnPlayer() {
+    const dead = this.entityManager.getEntity("player");
+    if (dead) {
+      // already removed by health system
     }
+    if (!this.mode.shouldRespawnPlayer()) return null;
+    return this.spawnPlayer(
+      this.mode.id === "team" ? "ally" : "player",
+      this.playerName
+    );
   }
 
-  private checkCollision(bullet: Bullet, tank: ITank): boolean {
-    const dx = bullet.position.x - tank.position.x;
-    const dy = bullet.position.y - tank.position.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+  adjustPlayerStat(stat: UpgradeableStat, delta: 1 | -1): boolean {
+    const player = this.entityManager.getEntity("player");
+    if (!player) return false;
 
-    const bulletRadius = bullet.radius ?? 4;
-    const tankRadius = 20;
+    const stats = player.getComponent("Stats");
+    const progression = player.getComponent("Progression");
+    if (!stats || !progression) return false;
 
-    return distance < bulletRadius + tankRadius;
+    if (delta === 1) {
+      const unspent = progression.unspentStatPoints(stats.getTotalAllocated());
+      if (unspent <= 0) return false;
+    } else if (stats.getAllocation(stat) <= 0) {
+      return false;
+    }
+
+    if (!stats.adjustAllocation(stat, delta)) return false;
+
+    applyStatSideEffects(player, stat, delta);
+    emitHudUpdate(this.entityManager);
+    return true;
   }
 
-  getPlayerScore() {
-    const playerTank = this.tanks.get(this.playerId);
-    return playerTank?.score ?? 0;
-  }
-
-  updateLeaderboard() {
-    const scores = Array.from(this.tanks.values())
-      .map((tank) => ({
-        id: tank.id,
-        name: tank.name,
-        score: tank.score,
-      }))
-      .sort((a, b) => b.score - a.score);
-
-    gameEvents.emit("scoreUpdate", scores);
+  applyPlayerClassEvolution(classId: TankClassId) {
+    const player = this.entityManager.getEntity("player");
+    if (!player) return;
+    applyClassEvolution(player, classId, this.viewport);
+    const progression = player.getComponent("Progression");
+    if (progression) {
+      progression.pendingClassEvolution = false;
+      progression.classEvolutionChoices = [];
+    }
+    gameEvents.emit("combatFx", {
+      type: "evolve",
+      x: player.getComponent("PhysicsBody")!.body.position.x,
+      y: player.getComponent("PhysicsBody")!.body.position.y,
+      color: player.getComponent("Stats")?.getStats().color,
+      sourceId: "player",
+    });
+    emitHudUpdate(this.entityManager);
   }
 
   update(delta: number) {
-    for (const [id, tank] of Array.from(this.tanks)) {
-      tank.update(delta);
+    Engine.update(engine, delta);
+    for (const system of this.systems) {
+      system.update(this.entityManager, delta);
+    }
 
-      if (!tank.isAlive()) {
-        this.viewport.removeChild(tank);
-        this.tanks.delete(id);
+    this.mode.onUpdate(this, delta);
 
-        if (id === this.playerId) {
-          gameEvents.emit("playerDied");
-        }
+    this.nestPulseTimer += delta;
+    if (this.nestPulseTimer >= NEST_PULSE_INTERVAL_MS) {
+      this.nestPulseTimer = 0;
+      spawnNest(
+        this.entityManager,
+        this.viewport,
+        NEST_CENTER.x,
+        NEST_CENTER.y,
+        NEST_PULSE_COUNT
+      );
+    }
+
+    const tank = this.entityManager.getEntity("player");
+
+    if (tank) {
+      const physicsBody = tank.getComponent("PhysicsBody");
+      const health = tank.getComponent("Health");
+      const progression = tank.getComponent("Progression");
+
+      if (health && health.isDead() && !this.playerDeadEmitted) {
+        this.playerDeadEmitted = true;
+        const killerId = health.lastAttackerId;
+        const killer = killerId
+          ? this.entityManager.getEntity(killerId)
+          : undefined;
+        gameEvents.emit("playerDied", {
+          killerName: killer?.getComponent("Name")?.name,
+          survivalTime: Math.floor(
+            (performance.now() - (progression?.spawnTime ?? 0)) / 1000
+          ),
+          xpEarned: progression?.score ?? 0,
+        });
+        this.mode.onEntityDeath?.(this, tank);
+      }
+
+      if (physicsBody && health && !health.isDead()) {
+        gameEvents.emit("playerPos", {
+          x: physicsBody.body.position.x,
+          y: physicsBody.body.position.y,
+        });
+
+        this.viewport.moveCenter(
+          physicsBody.body.position.x,
+          physicsBody.body.position.y
+        );
       }
     }
 
-    for (const [bulletId, bullet] of Array.from(this.bullets)) {
-      bullet.update(delta);
-
-      if (bullet.isExpired()) {
-        this.bullets.delete(bulletId);
-        this.viewport.removeChild(bullet);
-        continue;
-      }
-
-      for (const [tankId, tank] of Array.from(this.tanks)) {
-        if (tankId === bullet.ownerId) continue;
-
-        if (this.checkCollision(bullet, tank)) {
-          tank.takeDamage(bullet.damage);
-
-          const shooter = this.tanks.get(bullet.ownerId);
-          if (shooter && !tank.isAlive()) {
-            shooter.score += 100;
-          }
-
-          this.bullets.delete(bulletId);
-          this.viewport.removeChild(bullet);
-          break;
-        }
-      }
+    this.hudTick += delta;
+    if (this.hudTick > 100) {
+      this.hudTick = 0;
+      emitHudUpdate(this.entityManager);
     }
 
-    const player = this.tanks.get(this.playerId);
-
-    if (player) {
-      this.viewport.moveCenter(player.position.x, player.position.y);
-      this.viewport.setZoom(player.getStats().zoom ?? 1);
+    this.minimapTick += delta;
+    if (this.minimapTick > 500) {
+      this.minimapTick = 0;
+      this.emitMinimap();
     }
+  }
 
-    this.enemySpawner.update(delta);
+  private emitMinimap() {
+    const player = this.entityManager.getEntity("player");
+    const playerBody = player?.getComponent("PhysicsBody");
+    if (!playerBody) return;
 
-    this.updateLeaderboard();
+    const px = playerBody.body.position.x;
+    const py = playerBody.body.position.y;
+
+    const bots = this.entityManager
+      .queryByComponents("AIController", "PhysicsBody")
+      .map((b) => ({
+        x: b.getComponent("PhysicsBody")!.body.position.x,
+        y: b.getComponent("PhysicsBody")!.body.position.y,
+        teamId: b.getComponent("Collision")?.config.teamId,
+      }));
+
+    const shapes = this.entityManager
+      .queryByComponents("Wandering", "PhysicsBody")
+      .map((s) => ({
+        x: s.getComponent("PhysicsBody")!.body.position.x,
+        y: s.getComponent("PhysicsBody")!.body.position.y,
+        dist:
+          (s.getComponent("PhysicsBody")!.body.position.x - px) ** 2 +
+          (s.getComponent("PhysicsBody")!.body.position.y - py) ** 2,
+      }))
+      .sort((a, b) => a.dist - b.dist)
+      .slice(0, 40)
+      .map(({ x, y }) => ({ x, y }));
+
+    gameEvents.emit("minimapUpdate", {
+      player: { x: px, y: py },
+      bots,
+      shapes,
+      viewport: {
+        x: this.viewport.left,
+        y: this.viewport.top,
+        width: this.viewport.worldScreenWidth,
+        height: this.viewport.worldScreenHeight,
+      },
+    });
+  }
+
+  getEntityManager() {
+    return this.entityManager;
+  }
+
+  getViewport() {
+    return this.viewport;
+  }
+
+  getPlayerTank() {
+    return this.entityManager.getEntity("player");
+  }
+
+  getMode() {
+    return this.mode;
   }
 }
+
+export type { GameModeId };

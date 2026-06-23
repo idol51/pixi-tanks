@@ -1,64 +1,99 @@
-import { TankVariant } from "../factories/TankFactory";
-
-export type BulletStats = {
-  bulletSpeed: number; // Speed of the bullet in pixels per frame
-  bulletDamage: number; // Damage dealt by each bullet
-  bulletLifetime: number; // How long the bullet lasts before disappearing (in milliseconds)
-  bulletAcceleration?: number; // Acceleration of the bullet (in pixels per frame squared)
-  bulletRadius: number; // Radius of the bullet (in pixels)
+export type TankStatMultipliers = {
+  maxHealth?: number;
+  healthRegen?: number;
+  speed?: number;
+  reload?: number;
+  bulletDamage?: number;
+  bulletPenetration?: number;
+  bulletSpeed?: number;
 };
 
-export type TankStats = BulletStats & {
-  tankSpeed: number; // Speed in pixels per frame
-  tankHealth: number; // Maximum health of the tank normalized to 100
-  tankSize: number; // Size of the tank in pixels
-  fireRate: number; // Shots per second
-  zoom?: number; // Optional zoom level for the tank normalized to 1
+export type BaseTankStats = {
+  maxHealth: number;
+  healthRegen: number;
+  speed: number;
+  reload: number;
+  bulletDamage: number;
+  bulletPenetration: number;
+  bulletSpeed: number;
+  color: number;
 };
 
-export const TANK_STATS: Record<TankVariant, TankStats> = {
-  bot: {
-    tankSpeed: 2, // 2 pixels per frame
-    tankHealth: 100,
-    fireRate: 1, // cooldown = 1000 / fireRate ms
-    tankSize: 24, // Size of the tank in pixels
-    bulletDamage: 10,
-    bulletSpeed: 4, // Speed of the bullet in pixels per frame
-    bulletLifetime: 2000, // How long the bullet lasts before disappearing (in milliseconds)
-    bulletRadius: 8, // Radius of the bullet (in pixels)
-  },
-  missileLauncher: {
-    tankSpeed: 1.5, // 1.5 pixels per frame
-    tankHealth: 120,
-    fireRate: 1.5, // cooldown = 1000 / fireRate ms
-    tankSize: 22,
-    bulletDamage: 30,
-    bulletSpeed: 1, // Speed of the missile in pixels per frame
-    bulletLifetime: 3000, // How long the missile lasts before disappearing (in milliseconds)
-    bulletAcceleration: 0.06, // Acceleration of the missile (in pixels per frame squared)
-    bulletRadius: 8, // Radius of the missile (in pixels)
-    zoom: 0.9, // 👈 zoom out slightly
-  },
-  shotgun: {
-    tankHealth: 120,
-    tankSpeed: 1.2,
-    fireRate: 0.8, // slower fire rate
-    tankSize: 22,
-    bulletDamage: 8,
-    bulletSpeed: 6, // Speed of the shotgun bullet in pixels per frame
-    bulletLifetime: 1500, // How long the shotgun bullet lasts before disappearing (in milliseconds)
-    bulletRadius: 3, // Radius of the shotgun bullet (in pixels)
-    zoom: 0.9, // 👈 zoom out slightly
-  },
-  sniper: {
-    tankHealth: 80,
-    tankSpeed: 1.1,
-    fireRate: 0.5,
-    tankSize: 18,
+/** Hard cap for bullet velocity (world units). Applied after stat upgrades. */
+export const MAX_BULLET_SPEED = 9.5;
+
+export function clampBulletSpeed(speed: number): number {
+  return Math.min(speed, MAX_BULLET_SPEED);
+}
+
+export const DEFAULT_TANK_STATS: BaseTankStats = {
+  maxHealth: 120,
+  healthRegen: 0.5,
+  speed: 0.85,
+  reload: 1.0,
+  bulletDamage: 7,
+  bulletPenetration: 10,
+  bulletSpeed: 5.5,
+  color: 0x00ff00,
+};
+
+export const BASE_TANK_STATS: Record<string, BaseTankStats> = {
+  DEFAULT: DEFAULT_TANK_STATS,
+  SHOTGUN: {
+    maxHealth: 100,
+    healthRegen: 1,
+    speed: 1.2,
+    reload: 1.5,
     bulletDamage: 20,
-    bulletSpeed: 5, // Speed of the sniper bullet in pixels per frame
-    bulletLifetime: 2500, // How long the sniper bullet lasts before disappearing (in milliseconds)
-    bulletRadius: 5, // Radius of the sniper bullet (in pixels)
-    zoom: 0.8, // 👈 zoom out slightly
+    bulletPenetration: 10,
+    bulletSpeed: 6,
+    color: 0xff9900,
+  },
+  SNIPER: {
+    maxHealth: 80,
+    healthRegen: 0.5,
+    speed: 0.8,
+    reload: 2.5,
+    bulletDamage: 50,
+    bulletPenetration: 40,
+    bulletSpeed: 10,
+    color: 0x66ccff,
+  },
+  STRIKER: {
+    maxHealth: 90,
+    healthRegen: 0.8,
+    speed: 1.3,
+    reload: 1.2,
+    bulletDamage: 25,
+    bulletPenetration: 15,
+    bulletSpeed: 9,
+    color: 0xff4444,
+  },
+  FARMER: {
+    maxHealth: 110,
+    healthRegen: 1.5,
+    speed: 1,
+    reload: 1.8,
+    bulletDamage: 15,
+    bulletPenetration: 8,
+    bulletSpeed: 7,
+    color: 0x44ff44,
+  },
+  BRAWLER: {
+    maxHealth: 140,
+    healthRegen: 1,
+    speed: 0.9,
+    reload: 2,
+    bulletDamage: 18,
+    bulletPenetration: 12,
+    bulletSpeed: 6,
+    color: 0xff8800,
   },
 };
+
+export const BOT_PRESETS = [
+  { name: "Striker", statsKey: "STRIKER" as const, tier: 1 },
+  { name: "Farmer", statsKey: "FARMER" as const, tier: 1 },
+  { name: "Brawler", statsKey: "BRAWLER" as const, tier: 2 },
+  { name: "Sniper", statsKey: "SNIPER" as const, tier: 2 },
+];
