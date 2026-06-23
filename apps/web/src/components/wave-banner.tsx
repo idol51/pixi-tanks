@@ -11,6 +11,8 @@ export function WaveBanner() {
 
   const { wave, state, countdownMs } = waveState;
   let message = `Wave ${wave}`;
+  const isBoss = wave % 5 === 0 && wave >= 5;
+
   if (state === "cleared" && countdownMs != null) {
     const secs = Math.ceil(countdownMs / 1000);
     message = `Wave ${wave} cleared — next in ${secs}s`;
@@ -19,7 +21,7 @@ export function WaveBanner() {
       countdownMs != null && countdownMs > 0
         ? `Wave ${wave} incoming in ${Math.ceil(countdownMs / 1000)}s`
         : `Wave ${wave} incoming!`;
-  } else if (wave % 5 === 0 && wave >= 5) {
+  } else if (isBoss) {
     message = `Wave ${wave} — Boss incoming!`;
   }
 
@@ -35,7 +37,14 @@ export function WaveBanner() {
 
   return (
     <Wrapper {...props}>
-      <div className="bg-black/70 text-white px-4 py-2 rounded-full text-sm font-semibold border border-white/20">
+      <div
+        className={[
+          "px-5 py-2 rounded-sm text-sm font-display font-bold tracking-wider uppercase backdrop-blur-sm",
+          isBoss
+            ? "bg-black/80 text-[var(--game-gold)] border border-[var(--game-gold)]/60 game-glow animate-pulse"
+            : "bg-black/70 text-white border border-[var(--game-accent-dim)]",
+        ].join(" ")}
+      >
         {message}
       </div>
     </Wrapper>

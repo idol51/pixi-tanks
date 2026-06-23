@@ -25,7 +25,8 @@ export function createBullet({
       mask:
         CollisionCategories.TANK |
         CollisionCategories.WANDERING |
-        CollisionCategories.WALL,
+        CollisionCategories.WALL |
+        CollisionCategories.BULLET,
     },
   });
 

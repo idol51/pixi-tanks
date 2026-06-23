@@ -9,7 +9,11 @@ import { DamageFlashComponent } from "../components/DamageFlashComponent";
 import { gameEvents } from "../GameEvents";
 import { CollisionConfig } from "../components/CollisionComponent";
 import { isFriendlyFire } from "../utils/friendlyFire";
-
+import {
+  applyBulletPoolResult,
+  resolveBulletEntityHit,
+  resolveBulletVsBullet,
+} from "../utils/bulletCombat";
 import { System } from "../ecs/System";
 
 export class CollisionSystem extends System {
@@ -31,6 +35,27 @@ export class CollisionSystem extends System {
     flash.trigger();
   }
 
+  private emitHitFx(
+    targetEntity: Entity,
+    sourceId: string | undefined,
+    targetId: string
+  ) {
+    const targetPhysics = targetEntity.getComponent("PhysicsBody");
+    if (targetPhysics) {
+      gameEvents.emit("combatFx", {
+        type: "hit",
+        x: targetPhysics.body.position.x,
+        y: targetPhysics.body.position.y,
+        targetId,
+        sourceId,
+      });
+    }
+
+    if (targetId === "player") {
+      gameEvents.emit("playerHit");
+    }
+  }
+
   private applyBulletHit(
     bulletEntity: Entity,
     targetEntity: Entity,
@@ -38,52 +63,78 @@ export class CollisionSystem extends System {
     targetCol: { config: CollisionConfig }
   ) {
     const health = targetEntity.getComponent("Health");
-    if (!health) return;
-
     const bulletComp = bulletEntity.getComponent("Bullet");
-    const penetration = bulletComp?.penetration ?? bulletCol.config.damage ?? 10;
-    const armor = targetCol.config.armor ?? 0;
-    const baseDamage = bulletCol.config.damage ?? 10;
+    if (!health || !bulletComp) return;
 
-    let damage = baseDamage;
-    let destroyBullet = !bulletCol.config.piercing;
+    const result = resolveBulletEntityHit(bulletComp.getPools(), {
+      armor: targetCol.config.armor ?? 0,
+      bodyDamage: targetCol.config.bodyDamage ?? 0,
+    });
 
-    if (penetration < armor) {
-      damage = baseDamage * 0.5;
-      destroyBullet = true;
-    }
-
-    health.takeDamage(damage, bulletCol.config.ownerId);
+    health.takeDamage(result.damageToTarget, bulletCol.config.ownerId);
     this.flashEntity(targetEntity);
 
-    const ai = targetEntity.getComponent("AIController");
     const ownerId = bulletCol.config.ownerId;
+    const ai = targetEntity.getComponent("AIController");
     if (ai && ownerId) {
       ai.setThreat(ownerId);
     }
 
-    const targetPhysics = targetEntity.getComponent("PhysicsBody");
-    if (targetPhysics) {
-      gameEvents.emit("combatFx", {
-        type: "hit",
-        x: targetPhysics.body.position.x,
-        y: targetPhysics.body.position.y,
-        targetId: targetEntity.id,
-        sourceId: bulletCol.config.ownerId,
-      });
-    }
-
-    if (targetEntity.id === "player") {
-      gameEvents.emit("playerHit");
-    }
+    this.emitHitFx(targetEntity, ownerId, targetEntity.id);
 
     if (targetCol.config.reflect) {
       reflectBullet(bulletEntity);
       return;
     }
 
-    if (destroyBullet) {
+    if (result.bulletDestroyed) {
       destroyEntity(this.em, bulletEntity);
+      return;
+    }
+
+    applyBulletPoolResult(
+      bulletComp,
+      result.bulletDamageAfter,
+      result.bulletPenetrationAfter
+    );
+  }
+
+  private tryBulletVsBullet(
+    bulletA: Entity,
+    bulletB: Entity,
+    colA: { config: CollisionConfig },
+    colB: { config: CollisionConfig }
+  ) {
+    const compA = bulletA.getComponent("Bullet");
+    const compB = bulletB.getComponent("Bullet");
+    if (!compA || !compB) return;
+
+    if (colA.config.ownerId && colA.config.ownerId === colB.config.ownerId) {
+      return;
+    }
+
+    if (isFriendlyFire(colA.config, colB.config)) return;
+
+    const result = resolveBulletVsBullet(compA.getPools(), compB.getPools());
+
+    if (result.bulletADestroyed) {
+      destroyEntity(this.em, bulletA);
+    } else {
+      applyBulletPoolResult(
+        compA,
+        result.bulletADamageAfter,
+        result.bulletAPenetrationAfter
+      );
+    }
+
+    if (result.bulletBDestroyed) {
+      destroyEntity(this.em, bulletB);
+    } else {
+      applyBulletPoolResult(
+        compB,
+        result.bulletBDamageAfter,
+        result.bulletBPenetrationAfter
+      );
     }
   }
 
@@ -118,20 +169,19 @@ export class CollisionSystem extends System {
     this.applyBulletHit(bulletEntity, targetEntity, bulletCol, targetCol);
   }
 
-  private handleBulletTargetPair(
-    entityA: Entity,
-    entityB: Entity | undefined
-  ) {
-    if (!entityB) return;
-
+  private handleEntityPair(entityA: Entity, entityB: Entity) {
     const colA = entityA.getComponent("Collision");
     const colB = entityB.getComponent("Collision");
     if (!colA || !colB) return;
 
-    if (colA.config.group === "bullet") {
+    if (colA.config.group === "bullet" && colB.config.group === "bullet") {
+      this.tryBulletVsBullet(entityA, entityB, colA, colB);
+    } else if (colA.config.group === "bullet") {
       this.tryBulletHit(entityA, entityB);
     } else if (colB.config.group === "bullet") {
       this.tryBulletHit(entityB, entityA);
+    } else {
+      this.applyBodyDamage(entityA, entityB);
     }
   }
 
@@ -168,7 +218,7 @@ export class CollisionSystem extends System {
     }
     if (bodyDamageB > 0) {
       const healthA = entityA.getComponent("Health");
-      healthA?.takeDamage(bodyDamageB * damageScale, entityB.id);
+      healthA?.takeDamage(bodyDamageB * damageScale, entityA.id);
       this.flashEntity(entityA);
     }
   }
@@ -177,10 +227,9 @@ export class CollisionSystem extends System {
     for (const pair of event.pairs) {
       const entityA = getEntityFromBody(pair.bodyA);
       const entityB = getEntityFromBody(pair.bodyB);
+      if (!entityA || !entityB) continue;
 
-      if (entityA) this.handleBulletTargetPair(entityA, entityB);
-      if (entityB) this.handleBulletTargetPair(entityB, entityA);
-      if (entityA && entityB) this.applyBodyDamage(entityA, entityB);
+      this.handleEntityPair(entityA, entityB);
     }
   };
 

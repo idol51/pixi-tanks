@@ -69,6 +69,7 @@ type GameState = {
   startGame: () => void;
   die: (recap?: DeathRecap) => void;
   respawn: () => void;
+  exitToMenu: () => void;
 };
 
 const defaultHud: HudState = {
@@ -131,4 +132,14 @@ export const useGameStore = create<GameState>((set) => ({
     }),
   die: (recap) => set({ isAlive: false, deathRecap: recap ?? null }),
   respawn: () => set({ isAlive: true, deathRecap: null }),
+  exitToMenu: () =>
+    set({
+      started: false,
+      isAlive: true,
+      deathRecap: null,
+      killFeed: [],
+      classEvolution: null,
+      waveState: null,
+      hud: defaultHud,
+    }),
 }));

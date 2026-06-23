@@ -31,21 +31,25 @@ export function ModeSelect({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      {GAME_MODES.map((mode) => (
-        <button
-          key={mode.id}
-          type="button"
-          onClick={() => onChange(mode.id)}
-          className={`text-left p-3 rounded-lg border transition-colors ${
-            value === mode.id
-              ? "border-blue-400 bg-blue-500/20 text-white"
-              : "border-white/20 bg-white/5 text-white/80 hover:bg-white/10"
-          }`}
-        >
-          <div className="font-semibold text-sm">{mode.label}</div>
-          <div className="text-xs opacity-80">{mode.description}</div>
-        </button>
-      ))}
+      {GAME_MODES.map((mode) => {
+        const selected = value === mode.id;
+        return (
+          <button
+            key={mode.id}
+            type="button"
+            onClick={() => onChange(mode.id)}
+            className={[
+              "text-left p-3 rounded-md border transition-all font-display",
+              selected
+                ? "border-[var(--game-accent)] bg-[#00ff00]/10 text-white game-glow"
+                : "border-white/15 bg-black/30 text-white/75 hover:bg-[#00ff00]/5 hover:border-[#00ff00]/30",
+            ].join(" ")}
+          >
+            <div className="font-semibold text-sm tracking-wide">{mode.label}</div>
+            <div className="text-xs opacity-75 mt-0.5">{mode.description}</div>
+          </button>
+        );
+      })}
     </div>
   );
 }

@@ -72,7 +72,7 @@ describe("applyClassEvolution", () => {
     entity.addComponent("TankClass", new TankClassComponent("basic"));
     entity.addComponent(
       "Turret",
-      new TurretComponent([{ offset: [12, 0] }], viewport)
+      new TurretComponent([{ offset: [12, 0] }], "basic", viewport)
     );
     entity.addComponent("Sprite", new SpriteComponent(new Graphics()));
 

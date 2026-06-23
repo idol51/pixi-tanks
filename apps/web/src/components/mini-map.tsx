@@ -32,7 +32,7 @@ export const MiniMap = ({
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = "#888";
+    ctx.strokeStyle = "#00ff0044";
     ctx.lineWidth = 2;
     ctx.strokeRect(0, 0, canvas.width, canvas.height);
 
@@ -64,18 +64,23 @@ export const MiniMap = ({
       );
     }
 
-    ctx.fillStyle = "lime";
+    ctx.fillStyle = "#00ff00";
     ctx.beginPath();
     ctx.arc(playerPos.x * scaleX, playerPos.y * scaleY, 4, 0, 2 * Math.PI);
     ctx.fill();
   }, [playerPos, bots, shapes, viewport, viewSize]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={viewSize}
-      height={viewSize}
-      className="absolute right-4 bottom-4 bg-black/30 rounded-md border border-white/20"
-    />
+    <div className="absolute right-4 bottom-4 z-10 flex flex-col items-end gap-1">
+      <span className="text-[9px] font-display font-bold tracking-[0.2em] text-[var(--game-accent)]/80 uppercase px-1">
+        Map
+      </span>
+      <canvas
+        ref={canvasRef}
+        width={viewSize}
+        height={viewSize}
+        className="game-panel bg-black/50 rounded-sm border border-[var(--game-accent-dim)] game-glow"
+      />
+    </div>
   );
 };

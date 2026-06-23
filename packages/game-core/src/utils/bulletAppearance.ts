@@ -11,15 +11,15 @@ export function getBulletVisuals(stats: BaseTankStats): BulletVisuals {
 
   let radius: number;
   if (bulletDamage >= 40) {
-    radius = 8;
+    radius = 14;
   } else if (bulletDamage >= 30) {
-    radius = 6.5;
+    radius = 11;
   } else if (bulletDamage >= 20) {
-    radius = 5;
+    radius = 9;
   } else if (bulletDamage >= 14) {
-    radius = 4;
+    radius = 7;
   } else {
-    radius = 3.5;
+    radius = 6;
   }
 
   return { radius, color };

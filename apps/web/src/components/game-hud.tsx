@@ -30,7 +30,7 @@ const KEY_MAP: Record<string, UpgradeableStat> = {
 
 function SegmentBar({ pct, color }: { pct: number; color: string }) {
   return (
-    <div className="h-3 w-full bg-black/60 border border-[#00ff00]/30 rounded-sm overflow-hidden p-px">
+    <div className="h-3 w-full bg-black/60 border border-[var(--game-accent-dim)] rounded-sm overflow-hidden p-px">
       <div
         className="h-full transition-all duration-200 rounded-sm"
         style={{
@@ -69,10 +69,10 @@ function StatPips({
             className={[
               "w-3.5 h-3.5 border transition-all",
               filled
-                ? "bg-[#00ff00] border-[#00ff00] shadow-[0_0_6px_#00ff0066]"
-                : "bg-black/40 border-[#00ff00]/25",
+                ? "bg-[var(--game-accent)] border-[var(--game-accent)] shadow-[0_0_6px_var(--game-accent-dim)]"
+                : "bg-black/40 border-[var(--game-accent-dim)]",
               canAdd || canRemove
-                ? "cursor-pointer hover:scale-110 hover:border-[#00ff00]"
+                ? "cursor-pointer hover:scale-110 hover:border-[var(--game-accent)]"
                 : "cursor-default opacity-70",
             ].join(" ")}
             aria-label={`${STAT_LABELS[stat]} pip ${i + 1}`}
@@ -117,23 +117,17 @@ export function GameHud({
     <div
       className={[
         "absolute top-4 left-4 z-10 w-56 text-white text-xs select-none",
-        unspent > 0 && !reduceMotion
-          ? "drop-shadow-[0_0_12px_rgba(0,255,0,0.35)]"
-          : "",
+        unspent > 0 && !reduceMotion ? "game-glow" : "",
       ].join(" ")}
-      style={{
-        clipPath:
-          "polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%)",
-      }}
     >
-      <div className="bg-[#0a120a]/90 border border-[#00ff00]/40 p-3 space-y-3 backdrop-blur-sm">
+      <div className="game-panel p-3 space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <div className="text-[#00ff00] font-bold text-sm tracking-wide">
+            <div className="text-[var(--game-accent)] font-display font-bold text-sm tracking-wide game-text-glow">
               LVL {hud.level}
             </div>
             {hud.className && (
-              <div className="text-[10px] text-[#00ff00]/70 uppercase tracking-widest">
+              <div className="text-[10px] text-[var(--game-accent)]/70 uppercase tracking-widest font-display">
                 {hud.className}
               </div>
             )}
@@ -142,7 +136,7 @@ export function GameHud({
             className={[
               "text-[10px] font-mono px-2 py-0.5 border rounded-sm",
               unspent > 0
-                ? "border-yellow-400/80 text-yellow-300 bg-yellow-400/10"
+                ? "border-[var(--game-gold)]/80 text-[var(--game-gold)] bg-[var(--game-gold)]/10"
                 : "border-white/20 text-white/50",
             ].join(" ")}
           >
@@ -167,10 +161,10 @@ export function GameHud({
               {Math.floor(hud.xp)} / {hud.xpToNext}
             </span>
           </div>
-          <SegmentBar pct={xpPct} color="#ffcc00" />
+          <SegmentBar pct={xpPct} color="var(--game-gold)" />
         </div>
 
-        <div className="border-t border-[#00ff00]/20 pt-2 space-y-1.5">
+        <div className="border-t border-[var(--game-accent-dim)] pt-2 space-y-1.5">
           {!isMobile.any && (
             <div className="text-[9px] text-white/40 text-center mb-1">
               1–7 spend · Shift+1–7 refund
@@ -182,7 +176,9 @@ export function GameHud({
               <div key={stat} className="flex items-center gap-1.5">
                 <span className="w-14 truncate text-[10px] text-white/80">
                   {!isMobile.any && (
-                    <span className="text-[#00ff00]/40 mr-0.5">{i + 1}</span>
+                    <span className="text-[var(--game-accent)]/40 mr-0.5">
+                      {i + 1}
+                    </span>
                   )}
                   {STAT_LABELS[stat]}
                 </span>

@@ -86,7 +86,10 @@ export function spawnTank({
       ? SHOTGUN_BARREL_LAYOUT
       : DEFAULT_BARREL_LAYOUT);
 
-  tank.addComponent("Turret", new TurretComponent(layout, viewport, x, y));
+  tank.addComponent(
+    "Turret",
+    new TurretComponent(layout, tankClassId, viewport, x, y)
+  );
   tank.addComponent("Stats", new StatsComponent({ ...baseStats, color }));
   tank.addComponent("Progression", new ProgressionComponent());
   tank.addComponent("Name", new NameComponent(displayName ?? id));

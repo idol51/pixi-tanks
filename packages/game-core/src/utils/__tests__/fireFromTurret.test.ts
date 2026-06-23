@@ -18,7 +18,7 @@ describe("syncBarrelCooldowns", () => {
     const mockViewport = { addChild: () => {} } as never;
     entity.addComponent(
       "Turret",
-      new TurretComponent([{ offset: [12, 0] }], mockViewport)
+      new TurretComponent([{ offset: [12, 0] }], "basic", mockViewport)
     );
 
     syncBarrelCooldowns(entity);

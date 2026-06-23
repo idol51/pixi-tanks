@@ -41,7 +41,11 @@ export function spawnBullet(
 
   const bulletBody = createBullet({ x, y, angle, speed, radius, ownerId });
 
-  const graphic = new Graphics().circle(0, 0, radius).fill(color);
+  const graphic = new Graphics()
+    .circle(0, 0, radius)
+    .fill(color)
+    .circle(0, 0, radius)
+    .stroke({ width: 1.5, color: 0xffffff, alpha: 0.35 });
   const sprite = new SpriteComponent(graphic);
   attachSpriteToViewport(viewport, sprite);
 
@@ -61,6 +65,7 @@ export function spawnBullet(
     new BulletComponent(x, y, {
       maxDistance: 750,
       maxLifetimeMs: 3000,
+      damage,
       penetration,
     })
   );

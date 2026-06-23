@@ -32,7 +32,7 @@ export function applyClassEvolution(
   }
 
   if (turret) {
-    turret.rebuild(viewport, classDef.barrelLayout);
+    turret.rebuild(viewport, classDef.barrelLayout, classId);
     syncBarrelCooldowns(entity);
   }
 

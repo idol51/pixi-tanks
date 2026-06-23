@@ -4,9 +4,10 @@ import { DEFAULT_TANK_STATS } from "../../data/tank-stats";
 import { TANK_CLASS_TREE } from "../../data/tank-classes";
 
 describe("bullet appearance", () => {
-  it("basic tank bullets are small", () => {
+  it("basic tank bullets are small but visible", () => {
     const { radius } = getBulletVisuals(DEFAULT_TANK_STATS);
-    expect(radius).toBeLessThanOrEqual(4);
+    expect(radius).toBeGreaterThanOrEqual(6);
+    expect(radius).toBeLessThanOrEqual(8);
   });
 
   it("destroyer bullets are larger than machine gun bullets", () => {
